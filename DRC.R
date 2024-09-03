@@ -1,0 +1,1069 @@
+
+############################################################ Data tab ##################################################################################################
+
+#### Reactive objects ######################################################################################
+
+##### tidy data ---------------------------------------------------------------------------------------------
+
+data <- eventReactive(input$upldData_Butn_drc,
+                      {if (input$input_select == "smp") {
+                        data <- read.xlsx("Sample_data_OP_paper.xlsx")
+                      } else {
+                        if (input$input_select == "upld") {
+                          req(input$file1)
+                          inFile <- input$file1
+                          data <- read.xlsx(inFile$datapath)
+                        } else {
+                          req(input$text1)
+                          # Input the string from textArea
+                          tmp <- matrix(strsplit(input$text1, "\n")[[1]])
+                          # Separator selected
+                          Sep <- switch(input$SepP, '1'=",", '2'="\t", '3'=";")
+                          # Colnames
+                          Clnames <- strsplit(tmp[1], Sep)[[1]]
+                          # Generate the dataframe
+                          data <- matrix(0, length(tmp)-1, length(Clnames), dimnames = list(NULL, Clnames))
+                          for(i in 2:length(tmp)){
+                            Row <- strsplit(paste(tmp[i], Sep, Sep, sep = ""), Sep)[[1]]
+                            data[i-1, ] <- Row[-length(Row)]
+                          }
+                          data <- data.frame(data)
+                          colnames(data) <- Clnames
+                        }
+                      }
+                        # Convert the class of data in last 3 columns
+                        n_var <- ncol(data)-4
+                        if(n_var >= 0) {
+                          data[ , (n_var+2):ncol(data)] <- apply(data[ , (n_var+2):ncol(data)], 2, function(x) as.numeric(x))
+                        }
+                        return(data)   
+                      })
+
+##### reactive Variables - data_values------------------------------------------------------------------------------------
+data_values <- reactiveValues()
+
+observe({
+  data_values$n_var <- ncol(data())-4
+  data_values$x <- colnames(data())[data_values$n_var+2]
+  data_values$y <- colnames(data())[data_values$n_var+4]
+  if (data_values$n_var < 1) {
+    data_values$color_var <- "grey"
+  } else {
+    data_values$color_var <- colnames(data())[1]
+  }
+  
+  if (data_values$n_var <= 1 ) {
+    data_values$facet_var_row <- ""
+    data_values$facet_var_col <- ""
+  } else {
+    if (data_values$n_var == 2) {
+      data_values$facet_var_row <- setdiff(colnames(data()[1:data_values$n_var]), data_values$color_var)[1]
+      data_values$facet_var_col <- "."
+    } else {
+      data_values$facet_var_row <- setdiff(colnames(data()[1:data_values$n_var]), data_values$color_var)[1]
+      data_values$facet_var_col <- paste(setdiff(colnames(data()[1:data_values$n_var]), c(data_values$color_var, data_values$facet_var_row)), collapse = "+")
+    }
+  }
+  # minimum dose
+  ori_dose <- data()[, data_values$n_var+2]
+  
+  if (min(ori_dose) == 0) {
+    if (input$bp == "default") {
+      log10cl <- round(log10(min(ori_dose[ori_dose > 0]))) - 1
+      data_values$min_dose <- 10^(log10cl)
+    } else {
+      data_values$min_dose <- as.numeric(input$bp)
+    }
+  } else {
+    data_values$min_dose <- min(ori_dose)
+  }
+  
+})
+
+#### Message box to remind users if the file doesn't contain the necessary columns -------------------------------------------------------
+observeEvent(input$upldData_Butn_drc, {
+  if (data_values$n_var < 0) {
+    shinyalert(title = "Attention", 
+               text = h4(tags$b("It seems the data you uploaded doesn't have the nessary columns, please upload the data in the correct format.")), 
+               type = "error",
+               html = TRUE)
+  }
+})
+
+
+
+#### Scatterplot_dataset -----------------------------------------------------------------------------------
+data_scat <- reactive({
+  req(data_values$n_var >= 0)
+  data_scat <- data()
+  if(data_values$n_var == 0) {
+    colnames(data_scat) <- c("Biphasic", "Conc", "Replicate", "Response")
+  } else {
+    colnames(data_scat) <- c(colnames(data())[1:data_values$n_var], "Biphasic", "Conc", "Replicate", "Response")
+  }
+  if (min(data_scat$Conc) == 0) {
+    data_scat$Conc[data_scat$Conc == 0] <- data_values$min_dose
+  }
+  return(data_scat)
+})
+
+
+#### Mean and SD_dataset -----------------------------------------------------------------------------------
+# Mean and SD_dataset
+data_m_sd <- reactive({
+  req(data_values$n_var >= 0)
+  if(data_values$n_var == 0) {
+    data_m_sd <- data_scat() %>% group_by(Conc) %>% dplyr::summarise(Mean = mean(Response), SD = sd(Response))
+  } else {
+    data_m_sd <- data_scat() %>% 
+      group_by(across(colnames(data_scat())[1: data_values$n_var]), Conc) %>% 
+      dplyr::summarise(Mean = mean(Response), SD = sd(Response))
+  }
+  return(data_m_sd)
+})
+
+#### Line plot ---------------------------------------------------------------------------------------------
+lineplot <- reactive({
+  req(data_values$n_var >= 0)
+  req(data())
+  
+  if (data_values$n_var == 0) {
+    lineplot <- ggplot(data = data_scat(), aes(x = Conc, y = Response)) + 
+      # lines generated by loess model
+      # geom_smooth(se = FALSE, size = 0.5) + 
+      # lines generated by connecting the mean value
+      geom_line(data = data_m_sd(), aes(x = Conc, y = Mean))
+    # geom_hline(aes(yintercept = 50), linetype = "twodash", color = "red", alpha = 0.7)
+  } else {
+    lineplot <- ggplot(data = data_scat(), aes(x = Conc, y = Response, 
+                                               color = eval(parse(text = data_values$color_var)), 
+                                               group = eval(parse(text = data_values$color_var)))) + 
+      labs(color = data_values$color_var) +
+      # lines generated by loess model
+      # geom_smooth(se = FALSE, size = 0.5) + 
+      # lines generated by connecting the mean value
+      geom_line(data = data_m_sd(), aes(x = Conc, y = Mean))
+    # geom_hline(aes(yintercept = 50), linetype = "twodash", color = "red", alpha = 0.7)
+  }
+  
+  lineplot <- lineplot +
+    geom_point(alpha = 0.5) + 
+    scale_x_log10() +
+    xlab(data_values$x) + 
+    ylab(data_values$y) +
+    theme_few() +
+    panel_border(colour = "black", size = 1, remove = FALSE) +
+    theme(axis.title = element_text(size = 20),
+          axis.text = element_text(size = 16),
+          strip.text = element_text(size = 18),
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+  
+  if (data_values$n_var > 1) {
+    lineplot <- lineplot +
+      # facet_grid
+      facet_grid(eval(parse(text = paste0(data_values$facet_var_row, "~", data_values$facet_var_col))))
+    # facet_wrap
+    # facet_wrap(eval(parse(text = paste0(data_values$facet_var_row, "~",data_values$ facet_var_col))), ncol = 2)
+  }
+  return(lineplot)
+})
+
+#### Output ################################################################################################
+
+#### Sample Data - Excel Download --------------------------------------------------------------------------
+output$dl_smp <- downloadHandler(
+  filename = function(){"Sample_Data.xlsx"},
+  content = function(file) {
+    smp <- read.xlsx("Sample_data_OP_paper.xlsx")
+    write.xlsx(smp, file)
+  }
+)
+
+#### Output table ------------------------------------------------------------------------------------------ 
+output$df1 <- DT::renderDataTable({
+  df_temp <- data()
+  if (data_values$n_var >= 0) {
+    df_temp[ , (data_values$n_var+2)] <- round(df_temp[ , (data_values$n_var+2)], 3)
+    df_temp[ , (data_values$n_var+4)] <- round(df_temp[ , (data_values$n_var+4)], 2)
+  }
+  DT::datatable(df_temp, options = list(lengthMenu = c(5, 30, 50), pageLength = 10))
+})
+
+#### Output plot -------------------------------------------------------------------------------------------
+output$lineplot <- renderPlot({
+  return(lineplot())
+})
+
+
+
+#### Clear Data Button -------------------------------------------------------------------------------------
+observeEvent(input$clearText_Butn, {
+  updateTextAreaInput(session, inputId = "text1", label = "", value = "")
+})
+
+
+
+############################################################ ED50 Estimation tab #######################################################################################
+
+#### Reactive Objects - Model & ED50 info. #################################################################
+
+
+# Selected models and info. 
+df_ed <- eventReactive(input$calculate_Butn, {
+  req(data())
+  
+  ###########################################################
+  # number of variables
+  n_var <- isolate({data_values$n_var})
+  
+  # Model list
+  ## Monotonic
+  fctList_monotnc <- NULL
+  ### Log-logistic models (4 parms)
+  if (input$LL4) {
+    if(input$LL4_c == "NA") {c <- c("0", "NA")} else {c <- input$LL4_c}
+    if(input$LL4_d == "NA") {d <- c("1", "NA")} else {d <- input$LL4_d}
+    c_d <- expand.grid(c = c, d = d)
+    fctList_monotnc <- c(fctList_monotnc, paste("LL.4", c_d$c, c_d$d, sep = "_"))
+  }
+  ### Log-logistic models (5 parms)
+  if (input$LL5) {
+    if(input$LL5_c == "NA") {c <- c("0", "NA")} else {c <- input$LL5_c}
+    if(input$LL5_d == "NA") {d <- c("1", "NA")} else {d <- input$LL4_d}
+    c_d <- expand.grid(c = c, d = d)
+    fctList_monotnc <- c(fctList_monotnc, paste("LL.5", c_d$c, c_d$d, sep = "_"))
+  }
+  ### Weibull I models
+  if (input$W1) {
+    if(input$W1_c == "NA") {c <- c("0", "NA")} else {c <- input$W1_c}
+    if(input$W1_d == "NA") {d <- c("1", "NA")} else {d <- input$W1_d}
+    c_d <- expand.grid(c = c, d = d)
+    fctList_monotnc <- c(fctList_monotnc, paste("W1.4", c_d$c, c_d$d, sep = "_"))
+  }
+  ### Weibull II models
+  if (input$W2) {
+    if(input$W2_c == "NA") {c <- c("0", "NA")} else {c <- input$W2_c}
+    if(input$W2_d == "NA") {d <- c("1", "NA")} else {d <- input$W2_d}
+    c_d <- expand.grid(c = c, d = d)
+    fctList_monotnc <- c(fctList_monotnc, paste("W2.4", c_d$c, c_d$d, sep = "_"))
+  }
+
+  ## Biphasic
+  fctList_biphsc <- NULL
+  if (any(data_scat()$Biphasic == "Y")) {
+    ### Brain-Cousens models
+    if (input$BC) {
+      if(input$BC_c == "NA") {c <- c("0", "NA")} else {c <- input$BC_c}
+      c_d <- expand.grid(c = c, d = input$BC_d)
+      fctList_biphsc <- c(fctList_biphsc, paste("BC.5", c_d$c, c_d$d, sep = "_"))
+    }
+    ### beta models
+    if (input$beta) {
+      fctList_biphsc <- c(fctList_biphsc, "DRC.beta")
+    }
+  }
+  
+  # Criteria used to select the best model
+  const <- input$crtrn_selected
+  
+  # minimum dose
+  bp <- input$bp
+  
+  # ED50 type
+  ed50_type <- input$ed50_type
+  
+  # Whether to include the Reed-Muench method
+  # rm_ck <- input$two_point_method
+  
+  # p-values
+  lac_p <- input$lac_p
+  nell_p <- input$nell_p
+  neffect_p <- input$neffect_p
+  para0_p <- input$para0_p
+  
+  # ed_method
+  ed_methods <- isolate({input$ed_methods})
+  
+  # mini_dose
+  mini_dose <- isolate({data_values$min_dose})
+  
+  ############################# Compute ED info
+  # Nested the dataframe
+  Data <- data()
+  if (n_var == 0) {
+    colnames(Data) <- c("Biphasic", "Conc", "Replicate", "Response")
+    Data <- Data %>% nest()
+  } else {
+    colnames(Data) <- c(colnames(data())[1:n_var], "Biphasic", "Conc", "Replicate", "Response")
+    Data <- Data %>% 
+      tidyr::unite(col = "colComb", all_of(colnames(Data)[1:n_var]), sep = "_") %>% 
+      group_by(colComb) %>% 
+      nest()
+  }
+  
+  # Find the best model for each curve
+  model_drc <- Data %>% 
+    mutate(best_model = purrr::pmap(list(data), m_select_new, fctList_monotnc = fctList_monotnc, fctList_biphsc = fctList_biphsc, const = const)) %>% 
+    unnest(best_model)
+  
+  if (ed_methods == 'stdd_method') {
+    model_drc <- model_drc %>% 
+      mutate(ED_info = purrr::pmap(list(data), compute_ed_Std, bp = bp, fct = fctList_f, ed50_type = ed50_type, minidose = mini_dose)) %>% 
+      unnest(ED_info)
+  } else {
+    model_drc <- model_drc %>% 
+      mutate(ED_info = purrr::pmap(list(data), compute_ed_SG, bp = bp, fct = fctList_f, minidose = mini_dose)) %>% 
+      unnest(ED_info)
+  }
+  
+  # Statistical Test for the model
+  model_drc <- model_drc %>% 
+    mutate(StatsTest = purrr::pmap(list(data), stats_test, fct = fctList_f)) %>% 
+    unnest(StatsTest)
+  
+  model_drc <- model_drc %>% 
+    mutate(Lac_of_fit_Test = map(Lac_of_fit_p, ~sig_test(.x, p = lac_p, sign = ">")),
+           Neills_Test = map(Neills_Test_p, ~sig_test(.x, p = nell_p, sign = ">")),
+           No_Effect_Test = map(No_Effect_Test_p, ~sig_test(.x, p = neffect_p, sign = "<")),
+           Para_Test = map(Para_Info, ~para_sig_test(.x, p = para0_p)))
+  colnames(model_drc)[2] <- "RawData"
+  
+  # Fit the data to loess model
+  if (n_var == 0) {
+    loess_drc <- data_scat() %>% 
+      nest() %>% 
+      mutate(Curve_Loess_data = purrr::pmap(list(data), loess_fit_drc, bp = bp, minidose = mini_dose))
+    colnames(loess_drc)[1] <- "ScatterData"
+  } else {
+    loess_drc <- data_scat() %>% 
+      group_by(across(1:n_var)) %>% 
+      nest() %>% 
+      mutate(Curve_Loess_data = purrr::pmap(list(data), loess_fit_drc, bp = bp)) %>% 
+      tidyr::unite(col = "colComb", all_of(colnames(data_scat())[1:n_var]), sep = "_")
+    colnames(loess_drc)[2] <- "ScatterData"
+  }
+  
+  # combine all the information
+  if (n_var == 0) {
+    df_ed <- data_m_sd() %>% nest() %>% cbind(loess_drc, model_drc)
+    colnames(df_ed)[1] <- "MeanData"
+  } else {
+    df_ed <- data_m_sd() %>% 
+      group_by(across(1:n_var)) %>% nest() %>% 
+      tidyr::unite(col = "colComb", all_of(colnames(data_m_sd())[1:n_var]), sep = "_") %>% 
+      left_join(loess_drc, by = "colComb") %>% 
+      left_join(model_drc, by ="colComb") %>% 
+      separate(colComb, into = colnames(data_m_sd())[1:n_var], sep = "_")
+    colnames(df_ed)[n_var+1] <- "MeanData"
+  }
+  return(df_ed)
+  
+})
+
+
+#### Output - ED50 table ###################################################################################
+
+## exported data frame
+df_ed_exp <- reactive({
+  req(df_ed())
+  n_var <- isolate({data_values$n_var})
+  ed_methods <- isolate({input$ed_methods})
+  # variable names
+  if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
+  if (ed_methods == 'stdd_method') {
+    selected_var <- c(selected_var, (n_var+11), (n_var+37):(n_var+40), (n_var+13):(n_var+30)) 
+    df_temp <- df_ed()[ , selected_var]
+  } else {
+    selected_var <- c(selected_var, (n_var+11), (n_var+34):(n_var+37), (n_var+13):(n_var+27)) 
+    df_temp <- df_ed()[ , selected_var]
+  }
+  return(df_temp)
+})
+
+## tables for display
+ED50_table <- reactive({
+  req(df_ed())
+  n_var <- isolate({data_values$n_var})
+  ed_methods <- isolate({input$ed_methods})
+  # variable names
+  if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
+  if (ed_methods == 'stdd_method') {
+    selected_var <- c(selected_var, 
+                      (n_var+15):(n_var+19)) # ED50
+    df_temp <- df_ed()[ , selected_var]
+    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Response\nat ED50", "ED50\nMean", "ED50\nSE", "ED50\nLower Bound", "ED50\nUpper Bound")
+  } else {
+    selected_var <- c(selected_var, 
+                      (n_var+17):(n_var+20)) # ED50 - left
+    if (any(c("Brain-Cousens", "beta") %in% df_ed()$Model)) {
+      selected_var <- c(selected_var, 
+                        (n_var+21):(n_var+23)) # ED50 - right
+      colnm <- c("Response\nat ED50", "ED50_1\nMean", "ED50_1\nLower Bound", "ED50_1\nUpper Bound", "ED50_2\nMean", "ED50_2\nLower Bound", "ED50_2\nUpper Bound")
+    } else {
+      colnm <- c("Response\nat ED50", "ED50\nMean", "ED50\nLower Bound", "ED50\nUpper Bound")
+    }
+    
+    df_temp <- df_ed()[ , selected_var]
+    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
+  }
+  df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
+  return(df_temp)
+})
+
+RM_ED50_table <- reactive({
+  req(df_ed())
+  n_var <- isolate({data_values$n_var})
+  # variable names
+  if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
+  selected_var <- c(selected_var, (n_var+25):(n_var+27), (n_var+29):(n_var+30))
+  df_temp <- df_ed()[ , selected_var]
+  df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED50\nMean", "ED50\nSD", "ED50\nCV", "ED50\nLower Bound", "ED50\nUpper Bound")
+  return(df_temp)
+})
+
+BMD_table <- reactive({
+  req(df_ed())
+  n_var <- isolate({data_values$n_var})
+  ed_methods <- isolate({input$ed_methods})
+  # variable names
+  if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
+  if (ed_methods == 'stdd_method') {
+    selected_var <- c(selected_var, 
+                      (n_var+20):(n_var+24)) # BMD
+    df_temp <- df_ed()[ , selected_var]
+    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("BMR", "BMD\nMean", "BMD\nSE", "BMD\nLower Bound", "BMD\nUpper Bound")
+  } else {
+    selected_var <- c(selected_var, 
+                      (n_var+24):(n_var+27)) # BMD
+    df_temp <- df_ed()[ , selected_var]
+    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("BMR", "BMD\nMean", "BMD\nLower Bound", "BMD\nUpper Bound")
+  }
+  df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
+  return(df_temp)
+})
+
+Stats_table <- reactive({
+  req(df_ed())
+  n_var <- isolate({data_values$n_var})
+  ed_methods <- isolate({input$ed_methods})
+  lac <- isolate({input$lac})
+  nell <- isolate({input$nell})
+  neffect <- isolate({input$neffect})
+  para0 <- isolate({input$para0})
+  # variable names
+  if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
+  # Model
+  selected_var <- c(selected_var, (n_var+11)) 
+  # p-value
+  colnm <- NULL
+  if (ed_methods == 'stdd_method') {
+    if (lac) {selected_var <- c(selected_var, n_var+37); colnm <- c(colnm, "Lack-of-fit test")}
+    if (nell) {selected_var <- c(selected_var, n_var+38); colnm <- c(colnm, "Neill's test")}
+    if (neffect) {selected_var <- c(selected_var, n_var+39); colnm <- c(colnm, "No effet test")}
+    if (para0) {selected_var <- c(selected_var, n_var+40); colnm <- c(colnm, "Parameters ≠ 0")}
+  } else {
+    if (lac) {selected_var <- c(selected_var, n_var+34); colnm <- c(colnm, "Lack-of-fit test")}
+    if (nell) {selected_var <- c(selected_var, n_var+35); colnm <- c(colnm, "Neill's test")}
+    if (neffect) {selected_var <- c(selected_var, n_var+36); colnm <- c(colnm, "No effet test")}
+    if (para0) {selected_var <- c(selected_var, n_var+37); colnm <- c(colnm, "Parameters ≠ 0")}
+  }
+  df_temp <- df_ed()[ , selected_var]
+  colnames(df_temp)[(n_var+2):ncol(df_temp)] <- colnm
+  return(df_temp)
+})
+
+output$tb_stats <- DT::renderDataTable({
+  Stats_table()
+})
+
+output$tb_ed <- DT::renderDataTable({
+  ED50_table()
+})
+output$tb_ed_rm <- DT::renderDataTable({
+  RM_ED50_table()
+})
+
+output$tb_bmd <- DT::renderDataTable({
+  BMD_table()
+})
+
+#### Triggered UI ##########################################################################################
+
+#### Biphasic models ui ------------------------------------------------------
+
+output$biphasicmodels <- renderUI({
+  req(data_scat())
+  if (any(data_scat()$Biphasic == "Y")) {
+    wellPanel(
+      tags$span("- Biphasic Curves", style = "font-size: 16px; font-weight: bold;") %>% 
+        helper(icon = "question-circle", 
+               type = "markdown",
+               content = "Biphasic",
+               buttonLabel = "Close"),
+      div(style = "margin-top: 10px"), 
+      fluidRow(
+        div(style = "text-align: center; font-weight: bold;", 
+            column(6, ""),
+            column(3, "Lower"),
+            column(3, "Upper")
+        )
+      ),
+      fluidRow(
+        div(style = "display: flex; justify-content: center; align-items: center;", 
+            column(6, div(style = "display:flex;align-items:center;", checkboxInput("BC", "Brain-Cousens", TRUE))),
+            column(3, textInput("BC_c", NULL, "NA")),
+            column(3, textInput("BC_d", NULL, "NA"))
+        )
+      ),
+      fluidRow(
+        div(style = "display: flex; justify-content: center; align-items: center;", 
+            column(6, div(style = "display:flex;align-items:center;", checkboxInput("beta", "beta", TRUE))),
+            column(6)
+        )
+      )
+    )
+  }
+})
+
+output$ed50_results <- renderUI({
+  req(df_ed())
+  tagList(
+    list(
+      h4("Model Assessment Results", style = "font-weight: bold;"),
+      div(style = "margin-top: -10px"),
+      hr(),
+      div(style = "margin-top: -10px"),
+      DT::dataTableOutput("tb_stats") %>% shinycssloaders::withSpinner(),
+      h4(HTML(paste0("ED", tags$sub("50"), " Estimation Table")), style = "font-weight: bold;"),
+      div(style = "margin-top: -10px"),
+      hr(),
+      div(style = "margin-top: -10px"),
+      DT::dataTableOutput("tb_ed") %>% shinycssloaders::withSpinner(),
+      conditionalPanel(condition = "input.ed_methods == 'stdd_method' && input.ed50_type == 'Absolute' && input.two_point_method == true",
+        h4(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-Muench Method")), style = "font-weight: bold;"),
+        div(style = "margin-top: -10px"),
+        hr(),
+        div(style = "margin-top: -10px"),
+        DT::dataTableOutput("tb_ed_rm") %>% shinycssloaders::withSpinner(),
+      ),
+      h4("BMD Estimation Table", style = "font-weight: bold;"),
+      div(style = "margin-top: -10px"),
+      hr(),
+      div(style = "margin-top: -10px"),
+      DT::dataTableOutput("tb_bmd") %>% shinycssloaders::withSpinner(),
+      tags$b("Note:"),
+      #      p(HTML(paste0("1. The estimated ED", tags$sub("50"), " values with a ", tags$span("'*'", style = "font-size: 20px; background-color: #E6F2FF"), " indicate the ED", tags$sub("50"), 
+      #                    " is bracketed on one side by only a single point; in this case the ED", tags$sub("50"), 
+      #                    " is estimated by the", em("'Reed and Muench method'"), " (Ramakrishnan,", em("World J Virol"), 
+      #                    ", 2016). If you have many values with asterisks you should consider using a different concentration range."))),
+      p(HTML(paste0("To prevent over-fitting, we highly recommand you to choose the models based on your own experiment setup, 
+                    if you let the app to choose the best models for you, 
+                    the best models reported are selected from the drc analysis (Ritz C,", 
+                    em("et al."), ", ", em("PLoS One"), ", 2015), based on the criteria you choose on the left."))),
+      p(tags$b("Reference:")),
+      p(em("Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One. 10(12)")), 
+      p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933"))
+      # p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86"))
+    )
+  )
+})
+
+
+
+############################################################ Plot tab ################################################################################################## 
+#### Triggered UI ####################################################################################################
+
+#### Message box to remind users to choose the model -------------------------------------------------------
+observeEvent(input$tabs1, {
+  req(df_ed())
+  # Show a message if some of curves cannot be fitted to any of the models
+  if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_ed()$FctName))) {
+    shinyalert(title = "Attention", 
+               text = h4(tags$b("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting.")), 
+               type = "warning",
+               html = TRUE)
+  }
+})
+
+#### Plot_model_UI ---------------------------------------------------------------------------------------
+output$plot_model_ui <- renderUI({
+  req(df_ed())
+  if (any(is.na(df_ed()$FctName))) {
+    wellPanel(style = "background-color: #eaeaea;",
+              h4("Models"),
+              p(HTML(paste0("The ED", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
+                            "Please choose the appropriate model to plot them."))),
+              selectInput(inputId = "model_selected",
+                          label = "Select the models:",
+                          choices = c("Simple line plot" = "line",
+                                      "Loess model" = "loess"),
+                          selected = "line")
+    )
+  }
+})
+
+
+#### Plot_layout_ui ---------------------------------------------------------------------------------------
+
+output$plot_layout_ui <- renderUI({
+  req(data())
+  req(data_values$n_var >= 0)
+  if(data_values$n_var != 0) {
+    wellPanel(style = "background-color: #eaeaea;",
+      h4(tags$b("Layout")),
+      selectInput(inputId = "line_color_v",
+                  label = "Set line colors according to:",
+                  choices = colnames(data())[1:data_values$n_var],
+                  selected = colnames(data())[1]),   
+      if (data_values$n_var > 1) {
+        selectInput(inputId = "facet_row_v",
+                    label = "Set faceting groups on the rows by:",
+                    choices = setdiff(colnames(data())[1:data_values$n_var], colnames(data())[1]),
+                    selected = setdiff(colnames(data())[1:data_values$n_var], colnames(data())[1])[1])
+      }
+    )
+  }
+})
+
+observeEvent(input$line_color_v, {
+  updateSelectInput(session, inputId = "facet_row_v",
+                    choices = setdiff(colnames(data())[1:data_values$n_var], input$line_color_v),
+                    selected = setdiff(colnames(data())[1:data_values$n_var], input$line_color_v)[1])
+})
+
+#### Plot_appearance_ui ---------------------------------------------------------------------------------------
+output$plot_appearance_ui <- renderUI({
+  wellPanel(style = "background-color: #eaeaea;",
+            h4(tags$b("Appearance")),
+            div(style = "margin-top: -20px"),
+            selectInput(inputId = "plot_appearance",
+                        label = "",
+                        choices = c("All Replicates" = "all", "Mean and SD" = "m_sd"),
+                        selected = "all")
+  )
+})
+
+
+#### Plot_ED&Responses_Line_UI -----------------------------------------------------------------------------
+output$plot_resline_ui <- renderUI({
+  wellPanel(style = "background-color: #eaeaea;",
+            h5(tags$b("Show the ED values and the corresponding responses：")),
+            div(style = "margin-top: -20px"),
+            div(style = "display: inline-block; vertical-align: top;",
+                checkboxInput(inputId = "plot_ed50_ck", label = HTML(paste0("ED", tags$sub("50"))), value = FALSE)),
+            div(style = "display: inline-block; vertical-align: top;",
+                checkboxInput(inputId = "plot_bmd_ck", label = "BMD", value = FALSE))#,
+            #div(style = "display: inline-block; vertical-align: top;",
+            #    checkboxInput(inputId = "plot_resline_ck", label = "Max & Min Responses", value = FALSE)),
+            #textInput(inputId = "bp", label = "Minimum dose:", value = "default")
+  )
+})
+
+
+#### Download UI -------------------------------------------------------------------------------------------
+output$dl <- renderUI({
+  req(input$plot_Butn_1)
+  tagList(
+    list(
+      h4("Download"),
+      div(style = "margin-top: -10px"),
+      hr(),
+      div(style = "margin-top: -10px"),
+      
+      # Plot Download related
+      textInput(inputId = "file_name_1", label = "Enter a file name: ", value = Sys.time()),
+      div(style = "margin-top: -10px"),
+      div(style = "display: inline-block; vertical-align:top; width: 100px;",
+          textInput(inputId = "width_1", label = "Width", value = 8)),
+      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 100px;",
+          textInput(inputId = "height_1", label = "Height", value = 4)),
+      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 150px;",
+          selectInput(inputId = "file_type_1", 
+                      label = "Select file type: ", 
+                      choices = list("PNG", "JPEG", "PDF", "TIFF", "BMP", "SVG"),
+                      selected = "PNG")),
+      
+      # Download button
+      br(),
+      div(style = "display: inline-block; vertical-align: top;",
+          downloadButton(outputId = "dl_plot", label = "Download Plot")),
+      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align: top;",
+          downloadButton(outputId = "dl_plot_df", label = "Download Dataframe")),
+      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align: top;",
+          downloadButton(outputId = "dl_report", label = "Download Report")),
+      
+      
+      # Notes
+      div(style = "margin-top: 10px"),
+      tags$b("Note:"),
+      p("1. You can only show up to 10 different dose-response-curves in the plots, and please try to avoid ", 
+        tags$b(a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph")), "."),  
+      div(style = "margin-top: -10px"),
+      p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
+      div(style = "margin-top: -10px"),
+      p(HTML(paste0("3. The excel contains ED", tags$sub("50"), 
+                    " table, both dataframes for generating scatterplot and lineplot.")))
+      
+    )
+  )
+})
+
+#### Reactive Objects ######################################################################################
+
+#### Lineplot_dataset --------------------------------------------------------------------------------------
+data_predct <- eventReactive(input$plot_Butn_1, {
+  req(df_ed())
+  n_var <- isolate({data_values$n_var})
+  if (n_var == 0) {
+    data_predct <- df_ed() %>% filter(!is.na(FctName)) %>% 
+      dplyr::select("Curve_BestFit_data") %>% 
+      unnest() %>% dplyr::select(1:2)
+    colnames(data_predct)[1] <- c("Response")
+  } else {
+    data_predct <- df_ed() %>% filter(!is.na(FctName)) %>% 
+      dplyr::select(1:n_var, "Curve_BestFit_data") %>% 
+      unnest() %>% dplyr::select(1:(n_var+2))
+    colnames(data_predct)[(n_var+1)] <- c("Response")
+  }
+  
+  if (any(is.na(df_ed()$FctName))) {
+    data_predct_na <- df_ed() %>% filter(is.na(FctName))
+    if (input$model_selected == "loess") {
+      if (n_var == 0) {
+        data_predct_na <- data_predct_na %>% 
+          dplyr::select("Curve_Loess_data") %>% 
+          unnest()
+        colnames(data_predct_na)[1] <- c("Response")
+      } else {
+        data_predct_na <- data_predct_na %>% 
+          dplyr::select(1:n_var, "Curve_Loess_data") %>% 
+          unnest()
+        colnames(data_predct_na)[(n_var+1)] <- c("Response")
+      }
+    }
+    if (input$model_selected == "line") {
+      if (n_var == 0) {
+        data_predct_na <- data_predct_na %>% 
+          dplyr::select("MeanData") %>% 
+          unnest() %>% dplyr::select(2,1)
+        colnames(data_predct_na)[2] <- c("Response")
+      } else {
+        data_predct_na <- data_predct_na %>% 
+          dplyr::select(1:n_var, "MeanData") %>% 
+          unnest() %>% dplyr::select(1:n_var, (n_var+2), (n_var+1))
+        colnames(data_predct_na)[(n_var+1)] <- c("Response")
+      }
+    }
+    data_predct <- rbind(data_predct, data_predct_na)
+  }
+  
+  #n_var <-  ncol(df_ed())-20
+  #if (n_var == 0) {
+  #  data_predct <- df_ed() %>% 
+  #    dplyr::select("Curve_BestFit_data") %>% 
+  #    unnest()
+  #  colnames(data_predct)[1] <- "Response"
+  #} else {
+  #  data_predct <- df_ed() %>% 
+  #    dplyr::select(1:n_var, "Curve_BestFit_data") %>% 
+  #    unnest()
+  #  colnames(data_predct)[n_var+1] <- "Response"
+  #}
+  
+  return(data_predct)
+
+})
+
+
+#### Default Plot -------------------------------------------------------------------------------------------
+
+L_P <- reactive({
+  n_var <- ncol(data_predct())-2
+  
+  color_var <- isolate({input$line_color_v})
+  if (n_var <= 1 ) {
+    facet_var_row <- ""
+    facet_var_col <- ""
+  } else {
+    if (n_var == 2) {
+      facet_var_row <- isolate({input$facet_row_v})
+      facet_var_col <- "."
+    } else {
+      facet_var_row <- isolate({input$facet_row_v})
+      facet_var_col <- isolate({paste(setdiff(colnames(isolate({data()}))[1:n_var], c(color_var, facet_var_row)), collapse = "+")})
+    }
+  }
+  
+  # Legend
+  if (n_var != 0) {legend_order <- isolate({unique(isolate({data()})[[color_var]])})}
+  
+  # Palette
+  cbPalette = c("#00A4FF", "#FD7FEE", "#03DFCA", "#990A3A", "#F37B63", "#05B756", "#A3FB86", "#097C91", "#015EC9","#840EAA")
+  if (n_var == 0) {
+    n_color <- 1
+    p <- ggplot(data = data_predct(), aes(x = Conc, y = Response)) + 
+      scale_color_manual(values = get_palette(cbPalette, n_color))
+  } else {
+    n_color <- isolate({n_distinct(isolate({data_scat()})[[color_var]])})
+    #eval(parse(text = paste0("n_color <- isolate({n_distinct(isolate({data_scat()})$", color_var, ")})")))
+    p <- ggplot(data = data_predct(), aes(x = Conc, y = Response, color = eval(parse(text = color_var)), 
+                                          group = eval(parse(text = color_var)))) + 
+      scale_color_manual(color_var, values = get_palette(cbPalette, n_color), limits = legend_order)
+  }
+  
+  plot_appearance <- isolate({input$plot_appearance})
+  if (plot_appearance == "all") {
+    if (n_var == 0) {
+      p <- p + geom_point(data = isolate({data_scat()}), aes(x = Conc, y = Response), alpha = 0.5)
+    } else {
+      p <- p + geom_point(data = isolate({data_scat()}), aes(x = Conc, y = Response, group = eval(parse(text = color_var))), alpha = 0.5)
+    }
+  } else {
+    if (n_var == 0) {
+      p <- p + geom_point(data = isolate({data_m_sd()}), aes(x = Conc, y = Mean), alpha = 0.5) + 
+        geom_errorbar(data = isolate({data_m_sd()}), aes(x = Conc, y = Mean, ymin = Mean - SD, ymax = Mean + SD), width = 0.2, alpha = 0.8)
+    } else {
+      p <- p + geom_point(data = isolate({data_m_sd()}), aes(x = Conc, y = Mean, group = eval(parse(text = color_var))), alpha = 0.5) + 
+        geom_errorbar(data = isolate({data_m_sd()}), aes(x = Conc, y = Mean, group = eval(parse(text = color_var)),
+                                                         ymin = Mean - SD, ymax = Mean + SD), width = 0.2, alpha = 0.8)
+    }
+    
+  }
+  
+  if (n_var >= 3) {
+    p <- p +
+      # facet_grid
+      facet_grid(eval(parse(text = paste0(facet_var_row, "~", facet_var_col))))
+  } else {
+    if (n_var > 1){
+      p <- p +
+        # facet_wrap
+        facet_wrap(eval(parse(text = paste0(facet_var_row, "~", facet_var_col))), ncol = 4)
+    }
+  }
+  
+  
+  p <- p + 
+    geom_line() +
+    scale_x_log10(labels = function(x) format(x, scientific = FALSE)) +
+    xlab(isolate({data_values$x})) + 
+    ylab(isolate({data_values$y})) +
+    theme_few() +
+    panel_border(colour = "black", size = 1, remove = FALSE) +
+    theme(axis.title = element_text(size = 20),
+          axis.text = element_text(size = 16),
+          strip.text = element_text(size = 18),
+          legend.text = element_text(size = 18),
+          legend.title = element_text(size = 18))
+  
+  # Annotation dataframe
+  ed_methods <- isolate({input$ed_methods})
+  if (n_var == 0) { selected_var <- NULL } else { selected_var <- c(1:n_var)}
+  if (ed_methods == 'stdd_method') {
+    selected_var <- c(selected_var, (n_var+15):(n_var+30))
+  } else {
+    selected_var <- c(selected_var, (n_var+15):(n_var+27))
+  }
+  anno_df <- isolate({df_ed()})[ , selected_var]
+  anno_df[, (n_var + 1):ncol(anno_df)] <- lapply(anno_df[, (n_var + 1):ncol(anno_df)], as.numeric)
+  
+  # ED50
+  if (input$plot_ed50_ck == TRUE) {
+    if (n_var == 0) {
+      if (ed_methods == 'stdd_method') {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = Std_ED50_res), linetype = "longdash", alpha = 0.5) + 
+          # ed lines
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50_Mean), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50L), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50U), linetype = "dotted", alpha = 0.5)
+        
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res), linetype = "longdash", alpha = 0.5) + 
+          # ed lines - left
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50_l), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_l), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_l), linetype = "dotted", alpha = 0.5) +
+          # ed lines - right
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50_r), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r), linetype = "dotted", alpha = 0.5)
+        
+      }
+      
+    } else {
+      if (ed_methods == 'stdd_method') {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = Std_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          # ed lines
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50L, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50U, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          # ed lines - left
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) +
+          # ed lines - right
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        
+      }
+      
+    }
+  }
+  
+  # BMD
+  if (input$plot_bmd_ck == TRUE) {
+    if (n_var == 0) {
+      if (ed_methods == 'stdd_method') {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = Std_BMD_res), linetype = "longdash", alpha = 0.5) + 
+          # bmd lines
+          geom_vline(data = anno_df, aes(xintercept = Std_BMD_Mean), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDL), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDU), linetype = "dotted", alpha = 0.5)
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = SG_BMD_res), linetype = "longdash", alpha = 0.5) + 
+          # bmd lines
+          geom_vline(data = anno_df, aes(xintercept = SG_BMD), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_BMDL), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_BMDU), linetype = "dotted", alpha = 0.5)
+      }
+    } else {
+      if (ed_methods == 'stdd_method') {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = Std_BMD_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          # bmd lines
+          geom_vline(data = anno_df, aes(xintercept = Std_BMD_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDL, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDU, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = SG_BMD_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          # bmd lines
+          geom_vline(data = anno_df, aes(xintercept = SG_BMD, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_BMDL, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_BMDU, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+      }
+    }
+  }
+  
+#  # Responses
+#  if (input$plot_resline_ck == TRUE) {
+#    p <- p +
+#      # response lines
+#      geom_hline(data = anno_df, aes(yintercept = max_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+#      geom_hline(data = anno_df, aes(yintercept = min_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+#  } 
+  
+  p
+  
+})
+
+#### Show the EDs and related responses --------------------------------------------------------------------
+
+
+
+#### Output ################################################################################################
+
+#### Output plot -------------------------------------------------------------------------------------------
+output$drc_curve <- renderPlot({
+  return(L_P())
+})
+
+#### Plot Download -----------------------------------------------------------------------------------------
+output$dl_plot<- downloadHandler(
+  #Specify The File Name 
+  filename = function(){paste0(input$file_name_1, ".", tolower(input$file_type_1))},
+  content = function(file){
+    ggsave(file, L_P(), device = tolower(input$file_type_1),
+           width = as.numeric(input$width_1), height = as.numeric(input$height_1))
+  }
+)
+
+#### Excel Download ----------------------------------------------------------------------------------------
+output$dl_plot_df <- downloadHandler(
+  filename = function(){paste0(input$file_name_1, ".xlsx")},
+  content = function(file) {
+    list_of_datasets <- list("ED50_related" = df_ed_exp(), 
+                             "Bestfit_dataframe" = data_predct(), 
+                             "ScatterPlot_dataframe" = data_scat(), 
+                             "Mean_SD_dataframe" = data_m_sd()
+    )
+    write.xlsx(list_of_datasets, file)
+  }
+)
+
+#### Report Download ---------------------------------------------------------------------------------------
+output$dl_report <- downloadHandler(
+  filename = function(){paste0(input$file_name_1, ".html")},
+  content = function(file) {
+    tempReport <- file.path(tempdir(), "Report_Default.Rmd")
+    file.copy("Report_Default.Rmd", tempReport, overwrite = TRUE)
+    
+    # Set up parameters to pass to Rmd document
+    params_1 <- list(table = ED50_table(),
+                     n_var = ncol(data_predct())-2,
+                     color_var = input$line_color_v,
+                     Bestfit_dataframe = data_predct(),
+                     ScatterPlot_dataframe = data_scat(),
+                     Mean_SD_dataframe = data_m_sd(),
+                     Plot_appearance = input$plot_appearance,
+                     label_x_axis = data_values$x,
+                     label_y_axis = data_values$y
+    )
+    n_var <- ncol(data_predct())-2
+    if (n_var <= 1 ) {
+      params_1 <- list.append(params_1,
+                              facet_var_row = "",
+                              facet_var_col = "")
+    } else {
+      if (n_var == 2) {
+        params_1 <- list.append(params_1,
+                                legend_order = eval(parse(text = paste0("unique(data()$", input$line_color_v, ")"))),
+                                facet_var_row = input$facet_row_v,
+                                facet_var_col = ".")
+      } else {
+        params_1 <- list.append(params_1,
+                                legend_order = eval(parse(text = paste0("unique(data()$", input$line_color_v, ")"))),
+                                facet_var_row = input$facet_row_v,
+                                facet_var_col = paste(setdiff(colnames(data())[1:n_var], c(input$line_color_v, input$facet_row_v)), collapse = "+"))
+      }
+    }
+    
+    
+    # Knit the document, passing in the `params` list, and eval it in a
+    # child of the global environment (this isolates the code in the document
+    # from the code in this app).
+    rmarkdown::render(tempReport, output_file = file,
+                      params = params_1,
+                      envir = new.env(parent = globalenv())
+    )
+  }
+)
+
+
+############################################################ Customized plot tab ##################################################################################################
+
+source(file.path("CustomizedPlot.R"), local = TRUE)$value
