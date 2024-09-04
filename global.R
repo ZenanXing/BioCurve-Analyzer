@@ -131,7 +131,7 @@ control_variance <- function(model, constant_variance, training_dose){
 # Curve df and ED50
 compute_ed <- function(opt_mod, rl = 1.349, dataframe, 
                        constantVar, conf_interval, interval_type, bp, minidose) {
-  # dataframe <- Data[5, ] %>% unnest()
+  # dataframe <- Data[1, ] %>% unnest()
   # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = W1.4(fixed = c(NA, NA, NA, NA)))
   # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = BC.5())
   respns <- dataframe$Response
@@ -156,7 +156,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
     
     # calculate the response level for bmd estimation
     # starting point response and sd
-    starting_point <- predict(opt_mod, data.frame(dose = min_dose))
+    starting_point <- predict(opt_mod, data.frame(dose = min(dose)))
     sd_level <- rl * sqrt(control_variance(model = opt_mod, constant_variance = constantVar, training_dose = dose))
     
     if (monotonic_behaviour == "Flat") {
@@ -170,6 +170,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
       }
       # calculate the 50% max response for ed50 estimation
       doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
+      if(min(dose) == 0){doseRange <- c(0, doseRange)}
       
       # calculate the curve interval
       conf_interval_cv <- stats::predict(opt_mod, newdata = data.frame(dose = as.vector(doseRange)), interval = "confidence", level = conf_interval) %>% as.data.frame()
@@ -188,6 +189,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
       
       # Export the nested data for generate plot
       curve_df <- conf_interval_cv %>% dplyr::select(1) %>% mutate(Conc = doseRange)
+      if(min(dose) == 0) {curve_df <- curve_df %>% filter(Conc != 0)}
       colnames(curve_df) <- c("Prediction", "Conc")
       bmd_val <- nest(curve_df, data = everything())
       colnames(bmd_val) <- "Curve_BestFit_data"
@@ -552,9 +554,9 @@ para_sig_test <- function(df, p) {
 }
 
 
-################### ET50 ###################################################################
+#### ET50 ############################################################################################
 
-## Function to fit the time-to-event data to the best model annd estimate the ET50
+## Function to fit the time-to-event data to the best model annd estimate the ET50-----
 compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
 
   ## Select the list of functions based the shape of the curves
@@ -621,7 +623,7 @@ compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
   return(temp_Ret)
 }
 
-## Function to fit the data to loess model
+## Function to fit the data to loess model---------------------------------------------
 loess_fit_te <- function(df) {
   df_temp <- df
   # Fit all the data to loess model
@@ -639,5 +641,4 @@ loess_fit_te <- function(df) {
   }
   return(temp_Ret)
 }
-
 
