@@ -366,7 +366,7 @@ output$et50_results <- renderUI({
 observeEvent(input$tabs1, {
   req(df_et())
   # Show a message if some of curves cannot be fitted to any of the models
-  if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_et()$FctName))) {
+  if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_et()$FctName)) & input$datatype == 'te') {
       shinyalert(title = "Attention", 
                  text = h4(tags$b("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting.")), 
                  type = "warning",
@@ -377,7 +377,7 @@ observeEvent(input$tabs1, {
 #### Plot_model_UI ---------------------------------------------------------------------------------------
 output$plot_model_ui_te <- renderUI({
   req(df_et())
-  if (any(is.na(df_et()$FctName))) {
+  if (any(is.na(df_et()$FctName)) & input$datatype == 'te') {
     wellPanel(style = "background-color: #eaeaea;",
       h4("Models"),
       p(HTML(paste0("The ET", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",

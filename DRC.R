@@ -222,29 +222,29 @@ df_ed <- eventReactive(input$calculate_Butn, {
   fctList_monotnc <- NULL
   ### Log-logistic models (4 parms)
   if (input$LL4) {
-    if(input$LL4_c == "NA") {c <- c("0", "NA")} else {c <- input$LL4_c}
-    if(input$LL4_d == "NA") {d <- c("1", "NA")} else {d <- input$LL4_d}
+    if(input$LL4_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$LL4_c}
+    if(input$LL4_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$LL4_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("LL.4", c_d$c, c_d$d, sep = "_"))
   }
   ### Log-logistic models (5 parms)
   if (input$LL5) {
-    if(input$LL5_c == "NA") {c <- c("0", "NA")} else {c <- input$LL5_c}
-    if(input$LL5_d == "NA") {d <- c("1", "NA")} else {d <- input$LL4_d}
+    if(input$LL5_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$LL5_c}
+    if(input$LL5_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$LL4_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("LL.5", c_d$c, c_d$d, sep = "_"))
   }
   ### Weibull I models
   if (input$W1) {
-    if(input$W1_c == "NA") {c <- c("0", "NA")} else {c <- input$W1_c}
-    if(input$W1_d == "NA") {d <- c("1", "NA")} else {d <- input$W1_d}
+    if(input$W1_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$W1_c}
+    if(input$W1_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$W1_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("W1.4", c_d$c, c_d$d, sep = "_"))
   }
   ### Weibull II models
   if (input$W2) {
-    if(input$W2_c == "NA") {c <- c("0", "NA")} else {c <- input$W2_c}
-    if(input$W2_d == "NA") {d <- c("1", "NA")} else {d <- input$W2_d}
+    if(input$W2_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$W2_c}
+    if(input$W2_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$W2_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("W2.4", c_d$c, c_d$d, sep = "_"))
   }
@@ -254,8 +254,9 @@ df_ed <- eventReactive(input$calculate_Butn, {
   if (any(data_scat()$Biphasic == "Y")) {
     ### Brain-Cousens models
     if (input$BC) {
-      if(input$BC_c == "NA") {c <- c("0", "NA")} else {c <- input$BC_c}
-      c_d <- expand.grid(c = c, d = input$BC_d)
+      if(input$BC_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$BC_c}
+      if(input$BC_d == "Not Fixed") {d <- c("0", "NA")} else {d <- input$BC_d}
+      c_d <- expand.grid(c = c, d = d)
       fctList_biphsc <- c(fctList_biphsc, paste("BC.5", c_d$c, c_d$d, sep = "_"))
     }
     ### beta models
@@ -271,7 +272,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
   bp <- input$bp
   
   # ED50 type
-  ed50_type <- input$ed50_type
+  ed50_type <- isolate({input$ed50_type})
   
   # Whether to include the Reed-Muench method
   # rm_ck <- input$two_point_method
@@ -307,16 +308,6 @@ df_ed <- eventReactive(input$calculate_Butn, {
     mutate(best_model = purrr::pmap(list(data), m_select_new, fctList_monotnc = fctList_monotnc, fctList_biphsc = fctList_biphsc, const = const)) %>% 
     unnest(best_model)
   
-  if (ed_methods == 'stdd_method') {
-    model_drc <- model_drc %>% 
-      mutate(ED_info = purrr::pmap(list(data), compute_ed_Std, bp = bp, fct = fctList_f, ed50_type = ed50_type, minidose = mini_dose)) %>% 
-      unnest(ED_info)
-  } else {
-    model_drc <- model_drc %>% 
-      mutate(ED_info = purrr::pmap(list(data), compute_ed_SG, bp = bp, fct = fctList_f, minidose = mini_dose)) %>% 
-      unnest(ED_info)
-  }
-  
   # Statistical Test for the model
   model_drc <- model_drc %>% 
     mutate(StatsTest = purrr::pmap(list(data), stats_test, fct = fctList_f)) %>% 
@@ -329,6 +320,22 @@ df_ed <- eventReactive(input$calculate_Butn, {
            Para_Test = map(Para_Info, ~para_sig_test(.x, p = para0_p)))
   colnames(model_drc)[2] <- "RawData"
   
+  # ED estimation method
+  if (ed_methods == 'serra_greco_method') {
+    model_drc <- model_drc %>% 
+      mutate(ED_info = purrr::pmap(list(RawData), compute_ed_SG, bp = bp, fct = fctList_f, ed50_type = ed50_type, minidose = mini_dose)) %>% 
+      unnest(ED_info)
+  } else {
+    model_drc <- model_drc %>% 
+      mutate(ED_info = purrr::pmap(list(RawData), compute_ed_Std, bp = bp, fct = fctList_f, ed50_type = ed50_type, minidose = mini_dose)) %>% 
+      unnest(ED_info)
+  }
+  
+  # Reed-and-Muench Method
+  model_drc <- model_drc %>% 
+    mutate(RM_method = purrr::pmap(list(RawData), RM_method_f, ed50_type = ed50_type)) %>% 
+    unnest(RM_method)
+
   # Fit the data to loess model
   if (n_var == 0) {
     loess_drc <- data_scat() %>% 
@@ -339,7 +346,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
     loess_drc <- data_scat() %>% 
       group_by(across(1:n_var)) %>% 
       nest() %>% 
-      mutate(Curve_Loess_data = purrr::pmap(list(data), loess_fit_drc, bp = bp)) %>% 
+      mutate(Curve_Loess_data = purrr::pmap(list(data), loess_fit_drc, bp = bp, minidose = mini_dose)) %>% 
       tidyr::unite(col = "colComb", all_of(colnames(data_scat())[1:n_var]), sep = "_")
     colnames(loess_drc)[2] <- "ScatterData"
   }
@@ -357,6 +364,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
       separate(colComb, into = colnames(data_m_sd())[1:n_var], sep = "_")
     colnames(df_ed)[n_var+1] <- "MeanData"
   }
+  
   return(df_ed)
   
 })
@@ -369,15 +377,19 @@ df_ed_exp <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  if (ed_methods == 'stdd_method') {
-    selected_var <- c(selected_var, (n_var+11), (n_var+37):(n_var+40), (n_var+13):(n_var+30)) 
-    df_temp <- df_ed()[ , selected_var]
-  } else {
-    selected_var <- c(selected_var, (n_var+11), (n_var+34):(n_var+37), (n_var+13):(n_var+27)) 
-    df_temp <- df_ed()[ , selected_var]
+  selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+34))
+  if (ed_methods == 'serra_greco_method') { selected_var <- c(selected_var, (n_var+35):(n_var+37)) }
+  if (ed50_type == "Absolute") {
+    if (ed_methods == 'serra_greco_method') {
+      selected_var <- c(selected_var, (n_var+38):(n_var+43)) 
+    } else {
+      selected_var <- c(selected_var, (n_var+35):(n_var+40)) 
+    }
   }
+  df_temp <- df_ed()[ , selected_var]
   return(df_temp)
 })
 
@@ -386,26 +398,27 @@ ED50_table <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  if (ed_methods == 'stdd_method') {
+  if (ed_methods == 'serra_greco_method') {
     selected_var <- c(selected_var, 
-                      (n_var+15):(n_var+19)) # ED50
-    df_temp <- df_ed()[ , selected_var]
-    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Response\nat ED50", "ED50\nMean", "ED50\nSE", "ED50\nLower Bound", "ED50\nUpper Bound")
-  } else {
-    selected_var <- c(selected_var, 
-                      (n_var+17):(n_var+20)) # ED50 - left
+                      (n_var+27):(n_var+30)) # ED50 - left
     if (any(c("Brain-Cousens", "beta") %in% df_ed()$Model)) {
       selected_var <- c(selected_var, 
-                        (n_var+21):(n_var+23)) # ED50 - right
-      colnm <- c("Response\nat ED50", "ED50_1\nMean", "ED50_1\nLower Bound", "ED50_1\nUpper Bound", "ED50_2\nMean", "ED50_2\nLower Bound", "ED50_2\nUpper Bound")
+                        (n_var+31):(n_var+33)) # ED50 - right
+      colnm <- c("Response\nat ED50", "Low\nED50\nMean", "Low\nED50\nLower Bound", "Low\nED50\nUpper Bound", "High\nED50\nMean", "High\nED50\nLower Bound", "High\nED50\nUpper Bound")
     } else {
       colnm <- c("Response\nat ED50", "ED50\nMean", "ED50\nLower Bound", "ED50\nUpper Bound")
     }
     
     df_temp <- df_ed()[ , selected_var]
     colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
+  } else {
+    selected_var <- c(selected_var, 
+                      (n_var+25):(n_var+29)) # ED50
+    df_temp <- df_ed()[ , selected_var]
+    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Response\nat ED50", "ED50\nMean", "ED50\nSE", "ED50\nLower Bound", "ED50\nUpper Bound")
   }
   df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
   return(df_temp)
@@ -414,9 +427,14 @@ ED50_table <- reactive({
 RM_ED50_table <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
+  ed_methods <- isolate({input$ed_methods})
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  selected_var <- c(selected_var, (n_var+25):(n_var+27), (n_var+29):(n_var+30))
+  if (ed_methods == 'serra_greco_method') {
+    selected_var <- c(selected_var, (n_var+38):(n_var+40), (n_var+42):(n_var+43))
+  } else {
+    selected_var <- c(selected_var, (n_var+35):(n_var+37), (n_var+39):(n_var+40))
+  }
   df_temp <- df_ed()[ , selected_var]
   df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED50\nMean", "ED50\nSD", "ED50\nCV", "ED50\nLower Bound", "ED50\nUpper Bound")
@@ -427,19 +445,20 @@ BMD_table <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  if (ed_methods == 'stdd_method') {
+  if (ed_methods == 'serra_greco_method') {
     selected_var <- c(selected_var, 
-                      (n_var+20):(n_var+24)) # BMD
-    df_temp <- df_ed()[ , selected_var]
-    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("BMR", "BMD\nMean", "BMD\nSE", "BMD\nLower Bound", "BMD\nUpper Bound")
+                      (n_var+34):(n_var+37)) # BMD
+    colnm <- c("BMR", "BMD\nMean", "BMD\nLower Bound", "BMD\nUpper Bound")
   } else {
     selected_var <- c(selected_var, 
-                      (n_var+24):(n_var+27)) # BMD
-    df_temp <- df_ed()[ , selected_var]
-    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("BMR", "BMD\nMean", "BMD\nLower Bound", "BMD\nUpper Bound")
+                      (n_var+30):(n_var+34)) # BMD
+    colnm <- c("BMR", "BMD\nMean", "BMD\nSE", "BMD\nLower Bound", "BMD\nUpper Bound")
   }
+  df_temp <- df_ed()[ , selected_var]
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
   df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
   return(df_temp)
 })
@@ -448,6 +467,7 @@ Stats_table <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
   lac <- isolate({input$lac})
   nell <- isolate({input$nell})
   neffect <- isolate({input$neffect})
@@ -458,17 +478,10 @@ Stats_table <- reactive({
   selected_var <- c(selected_var, (n_var+11)) 
   # p-value
   colnm <- NULL
-  if (ed_methods == 'stdd_method') {
-    if (lac) {selected_var <- c(selected_var, n_var+37); colnm <- c(colnm, "Lack-of-fit test")}
-    if (nell) {selected_var <- c(selected_var, n_var+38); colnm <- c(colnm, "Neill's test")}
-    if (neffect) {selected_var <- c(selected_var, n_var+39); colnm <- c(colnm, "No effet test")}
-    if (para0) {selected_var <- c(selected_var, n_var+40); colnm <- c(colnm, "Parameters ≠ 0")}
-  } else {
-    if (lac) {selected_var <- c(selected_var, n_var+34); colnm <- c(colnm, "Lack-of-fit test")}
-    if (nell) {selected_var <- c(selected_var, n_var+35); colnm <- c(colnm, "Neill's test")}
-    if (neffect) {selected_var <- c(selected_var, n_var+36); colnm <- c(colnm, "No effet test")}
-    if (para0) {selected_var <- c(selected_var, n_var+37); colnm <- c(colnm, "Parameters ≠ 0")}
-  }
+  if (lac) {selected_var <- c(selected_var, n_var+18); colnm <- c(colnm, "Lack-of-fit test")}
+  if (nell) {selected_var <- c(selected_var, n_var+19); colnm <- c(colnm, "Neill's test")}
+  if (neffect) {selected_var <- c(selected_var, n_var+20); colnm <- c(colnm, "No effet test")}
+  if (para0) {selected_var <- c(selected_var, n_var+21); colnm <- c(colnm, "Parameters ≠ 0")}
   df_temp <- df_ed()[ , selected_var]
   colnames(df_temp)[(n_var+2):ncol(df_temp)] <- colnm
   return(df_temp)
@@ -481,6 +494,7 @@ output$tb_stats <- DT::renderDataTable({
 output$tb_ed <- DT::renderDataTable({
   ED50_table()
 })
+
 output$tb_ed_rm <- DT::renderDataTable({
   RM_ED50_table()
 })
@@ -513,8 +527,8 @@ output$biphasicmodels <- renderUI({
       fluidRow(
         div(style = "display: flex; justify-content: center; align-items: center;", 
             column(6, div(style = "display:flex;align-items:center;", checkboxInput("BC", "Brain-Cousens", TRUE))),
-            column(3, textInput("BC_c", NULL, "NA")),
-            column(3, textInput("BC_d", NULL, "NA"))
+            column(3, textInput("BC_c", NULL, "Not Fixed")),
+            column(3, textInput("BC_d", NULL, "Not Fixed"))
         )
       ),
       fluidRow(
@@ -531,18 +545,13 @@ output$ed50_results <- renderUI({
   req(df_ed())
   tagList(
     list(
-      h4("Model Assessment Results", style = "font-weight: bold;"),
-      div(style = "margin-top: -10px"),
-      hr(),
-      div(style = "margin-top: -10px"),
-      DT::dataTableOutput("tb_stats") %>% shinycssloaders::withSpinner(),
       h4(HTML(paste0("ED", tags$sub("50"), " Estimation Table")), style = "font-weight: bold;"),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
       DT::dataTableOutput("tb_ed") %>% shinycssloaders::withSpinner(),
-      conditionalPanel(condition = "input.ed_methods == 'stdd_method' && input.ed50_type == 'Absolute' && input.two_point_method == true",
-        h4(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-Muench Method")), style = "font-weight: bold;"),
+      conditionalPanel(condition = "input.ed50_type == 'Absolute' && input.two_point_method == true",
+        h4(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-and-Muench Method")), style = "font-weight: bold;"),
         div(style = "margin-top: -10px"),
         hr(),
         div(style = "margin-top: -10px"),
@@ -553,6 +562,11 @@ output$ed50_results <- renderUI({
       hr(),
       div(style = "margin-top: -10px"),
       DT::dataTableOutput("tb_bmd") %>% shinycssloaders::withSpinner(),
+      h4("Model Assessment Results", style = "font-weight: bold;"),
+      div(style = "margin-top: -10px"),
+      hr(),
+      div(style = "margin-top: -10px"),
+      DT::dataTableOutput("tb_stats") %>% shinycssloaders::withSpinner(),
       tags$b("Note:"),
       #      p(HTML(paste0("1. The estimated ED", tags$sub("50"), " values with a ", tags$span("'*'", style = "font-size: 20px; background-color: #E6F2FF"), " indicate the ED", tags$sub("50"), 
       #                    " is bracketed on one side by only a single point; in this case the ED", tags$sub("50"), 
@@ -564,8 +578,8 @@ output$ed50_results <- renderUI({
                     em("et al."), ", ", em("PLoS One"), ", 2015), based on the criteria you choose on the left."))),
       p(tags$b("Reference:")),
       p(em("Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One. 10(12)")), 
-      p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933"))
-      # p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86"))
+      p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
+      p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86"))
     )
   )
 })
@@ -579,7 +593,7 @@ output$ed50_results <- renderUI({
 observeEvent(input$tabs1, {
   req(df_ed())
   # Show a message if some of curves cannot be fitted to any of the models
-  if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_ed()$FctName))) {
+  if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_ed()$FctName)) & input$datatype == 'drc') {
     shinyalert(title = "Attention", 
                text = h4(tags$b("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting.")), 
                type = "warning",
@@ -590,7 +604,7 @@ observeEvent(input$tabs1, {
 #### Plot_model_UI ---------------------------------------------------------------------------------------
 output$plot_model_ui <- renderUI({
   req(df_ed())
-  if (any(is.na(df_ed()$FctName))) {
+  if (any(is.na(df_ed()$FctName)) & input$datatype == 'drc') {
     wellPanel(style = "background-color: #eaeaea;",
               h4("Models"),
               p(HTML(paste0("The ED", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
@@ -864,11 +878,12 @@ L_P <- reactive({
   
   # Annotation dataframe
   ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
   if (n_var == 0) { selected_var <- NULL } else { selected_var <- c(1:n_var)}
-  if (ed_methods == 'stdd_method') {
-    selected_var <- c(selected_var, (n_var+15):(n_var+30))
+  if (ed_methods == 'serra_greco_method') {
+    selected_var <- c(selected_var, (n_var+25):(n_var+43))
   } else {
-    selected_var <- c(selected_var, (n_var+15):(n_var+27))
+    selected_var <- c(selected_var, (n_var+25):(n_var+40))
   }
   anno_df <- isolate({df_ed()})[ , selected_var]
   anno_df[, (n_var + 1):ncol(anno_df)] <- lapply(anno_df[, (n_var + 1):ncol(anno_df)], as.numeric)
@@ -876,16 +891,7 @@ L_P <- reactive({
   # ED50
   if (input$plot_ed50_ck == TRUE) {
     if (n_var == 0) {
-      if (ed_methods == 'stdd_method') {
-        p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = Std_ED50_res), linetype = "longdash", alpha = 0.5) + 
-          # ed lines
-          geom_vline(data = anno_df, aes(xintercept = Std_ED50_Mean), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_ED50L), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_ED50U), linetype = "dotted", alpha = 0.5)
-        
-      } else {
+      if (ed_methods == 'serra_greco_method') {
         p <- p +
           # response lines
           geom_hline(data = anno_df, aes(yintercept = SG_ED50_res), linetype = "longdash", alpha = 0.5) + 
@@ -898,19 +904,19 @@ L_P <- reactive({
           geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r), linetype = "dotted", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r), linetype = "dotted", alpha = 0.5)
         
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = Std_ED50_res), linetype = "longdash", alpha = 0.5) + 
+          # ed lines
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50_Mean), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50L), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50U), linetype = "dotted", alpha = 0.5)
+        
       }
       
     } else {
-      if (ed_methods == 'stdd_method') {
-        p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = Std_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          # ed lines
-          geom_vline(data = anno_df, aes(xintercept = Std_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_ED50L, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_ED50U, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
-        
-      } else {
+      if (ed_methods == 'serra_greco_method') {
         p <- p +
           # response lines
           geom_hline(data = anno_df, aes(yintercept = SG_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
@@ -923,6 +929,15 @@ L_P <- reactive({
           geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
         
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = Std_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          # ed lines
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50L, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_ED50U, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        
       }
       
     }
@@ -931,15 +946,7 @@ L_P <- reactive({
   # BMD
   if (input$plot_bmd_ck == TRUE) {
     if (n_var == 0) {
-      if (ed_methods == 'stdd_method') {
-        p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = Std_BMD_res), linetype = "longdash", alpha = 0.5) + 
-          # bmd lines
-          geom_vline(data = anno_df, aes(xintercept = Std_BMD_Mean), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_BMDL), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_BMDU), linetype = "dotted", alpha = 0.5)
-      } else {
+      if (ed_methods == 'serra_greco_method') {
         p <- p +
           # response lines
           geom_hline(data = anno_df, aes(yintercept = SG_BMD_res), linetype = "longdash", alpha = 0.5) + 
@@ -947,17 +954,19 @@ L_P <- reactive({
           geom_vline(data = anno_df, aes(xintercept = SG_BMD), linetype = "longdash", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = SG_BMDL), linetype = "dotted", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = SG_BMDU), linetype = "dotted", alpha = 0.5)
-      }
-    } else {
-      if (ed_methods == 'stdd_method') {
+        
+      } else {
         p <- p +
           # response lines
-          geom_hline(data = anno_df, aes(yintercept = Std_BMD_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_hline(data = anno_df, aes(yintercept = Std_BMD_res), linetype = "longdash", alpha = 0.5) + 
           # bmd lines
-          geom_vline(data = anno_df, aes(xintercept = Std_BMD_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_BMDL, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = Std_BMDU, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
-      } else {
+          geom_vline(data = anno_df, aes(xintercept = Std_BMD_Mean), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDL), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDU), linetype = "dotted", alpha = 0.5)
+        
+      }
+    } else {
+      if (ed_methods == 'serra_greco_method') {
         p <- p +
           # response lines
           geom_hline(data = anno_df, aes(yintercept = SG_BMD_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
@@ -965,6 +974,16 @@ L_P <- reactive({
           geom_vline(data = anno_df, aes(xintercept = SG_BMD, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = SG_BMDL, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = SG_BMDU, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = Std_BMD_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          # bmd lines
+          geom_vline(data = anno_df, aes(xintercept = Std_BMD_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDL, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = Std_BMDU, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        
       }
     }
   }

@@ -1,4 +1,4 @@
-#### Biphasic Curves
+### Biphasic Curves
 
 The following models are used to describe the biphasic curves.
 
