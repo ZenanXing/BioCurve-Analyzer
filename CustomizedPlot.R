@@ -118,52 +118,11 @@ output$tab4_side <- renderUI({
                          textInput(inputId = "palette_provd", label = NULL,
                                    value = cus_plt_values$palette)
                          
-                         # div(style = "vertical-align:top; width: 200px;",
-                         #     selectInput(inputId = "line_clr_slct",
-                         #                 label = "Line colors:",
-                         #                 choices = c("Provide color list" = 1,
-                         #                             "Select colors" = 2),
-                         #                 selected = 1)),
-                         # conditionalPanel(condition = "input.line_clr_slct == 1",
-                         #                  em(p("Please provide a comma-separated list of hex colors.")),
-                         #                  textInput(inputId = "palette_provd", label = NULL,
-                         #                            value = cus_plt_values$palette)),
-                         # conditionalPanel(condition = "input.line_clr_slct == 2",
-                         #                  div(
-                         #                    id = "header-section",
-                         #                    div(id = "selected-cols-row",
-                         #                        uiOutput(outputId = "selectedCols", inline = TRUE)),
-                         #                    textInput(inputId = "palette_slct", label = "Line colors:",
-                         #                              value = cus_plt_values$palette)
-                         #                  )
-                         #                  )
-                       )
       )
     )
   )
 })
 
-# output$selectedCols <- renderUI({
-#   lapply(seq_along(cus_plt_values$selectedCols), function(colNum) {
-#     cls <- "col col-transparent-box"
-#     if (colNum == cus_plt_values$selectedNum) {
-#       cls <- paste0(cls, " selected")
-#     }
-#     if (isColDark(cus_plt_values$selectedCols[colNum])) {
-#       cls <- paste0(cls, " col-dark")
-#     }
-#     div(
-#       class = cls,
-#       div(
-#         style = paste0("background:",
-#                        hex2rgba_str(cus_plt_values$selectedCols[colNum])),
-#         class = "selected-col-inner",
-#         `data-colnum` = colNum,
-#         colNum
-#       )
-#     )
-#   })
-# })
 
 # Change the legend label automatically when the legend order changes ----
 observeEvent(input$legend_order, {
