@@ -410,36 +410,8 @@ ui <- fluidPage(
                                               # Confirm the calculation
                                               div(style = "text-align: right;",
                                                   actionButton(inputId = "calculate_Butn",
-                                                               label = tags$b("Calculate")))# ,
+                                                               label = tags$b("Calculate")))
                                               
-                                              
-                                              # 
-                                              # checkboxGroupInput(inputId = "LL_list", 
-                                              #                    label = tags$em("- Log-logistic models"),
-                                              #                    choices = c("LL.2", "LL.3", "LL.3u", "LL.4", "LL.5"),
-                                              #                    inline = TRUE,
-                                              #                    selected = "LL.4"),
-                                              # checkboxGroupInput(inputId = "W_1_list",
-                                              #                    label = tags$em("- Weibull I models"),
-                                              #                    choices = c("W1.2", "W1.3", "W1.3u", "W1.4"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W1.4"),
-                                              # checkboxGroupInput(inputId = "W_2_list",
-                                              #                    label = tags$em("- Weibull II models"),
-                                              #                    choices = c("W2.2", "W2.3", "W2.3u", "W2.4"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W2.4"),
-                                              # 
-                                              # checkboxGroupInput(inputId = "BC_list", 
-                                              #                    label = tags$em("- Brain Cousens models"),
-                                              #                    choices = c("BC.4", "BC.5"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "BC.5"),
-                                              # checkboxGroupInput(inputId = "beta_list",
-                                              #                    label = tags$em("- beta model"),
-                                              #                    choices = c("DRC.beta"),
-                                              #                    inline = TRUE,
-                                              #                    selected = "DRC.beta")
                                               ),
                              # Time-to-event data:
                              conditionalPanel(condition = "input.datatype == 'te'", 
@@ -504,27 +476,6 @@ ui <- fluidPage(
                                                   actionButton(inputId = "calculate_Butn_te",
                                                                label = tags$b("Calculate")))
                                               
-                                              # , 
-                                              # checkboxGroupInput(inputId = "LL_list_te", 
-                                              #                    label = tags$em("- Log-logistic models"),
-                                              #                    choices = c("LL.2", "LL.3"),
-                                              #                    inline = TRUE,
-                                              #                    selected = "LL.3"),
-                                              # checkboxGroupInput(inputId = "W_1_list_te",
-                                              #                    label = tags$em("- Weibull I models"),
-                                              #                    choices = c("W1.2", "W1.3"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W1.3"),
-                                              # checkboxGroupInput(inputId = "W_2_list_te",
-                                              #                    label = tags$em("- Weibull II models"),
-                                              #                    choices = c("W2.2", "W2.3"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W2.3"),
-                                              # checkboxGroupInput(inputId = "LN_list_te",
-                                              #                    label = tags$em("- Log-normal models"),
-                                              #                    choices = c("LN.2", "LN.3"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "LN.3")
                                               
                                               )
                              
