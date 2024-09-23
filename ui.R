@@ -28,23 +28,17 @@ library(bigsnpr)
 library(shinyhelper)
 library(broom)
 library(scales)
+# install.packages("remotes")
+# remotes::install_github("DoseResponse/bmd")
 library(bmd)
 library(randtests)
 library(car)
 library(stats)
 
-#library(bslib)# theme
 
 # Define UI for application
 ui <- fluidPage(
-    #theme = bs_theme(version = 4, bootswatch = "minty"), #theme
     useShinyjs(),
-    # Apply css
-    tags$head(
-        tags$link(rel="stylesheet", type = "text/css", href = file.path("app.css")),
-        tags$link(rel="stylesheet", type = "text/css", href = file.path("plotHelper.css"))
-    ),
-
     # Application title ############################################################################################
     titlePanel("BioCurve Analyzer"),
     
@@ -81,12 +75,12 @@ ui <- fluidPage(
                                                 p("The data should be in", tags$b(a(href = "https://r4ds.had.co.nz/tidy-data.html", "tidy format")),
                                                   "with ", tags$b("column order"), " as the follows:"),
                                                 div(style = "margin-top: -10px"),
-                                                p(tags$span("Factors", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), 
-                                                  " (if applicable, e.g. Protein, Compound, ", tags$em("et al."), "; try to avoid using underscore in the name), ",
-                                                  tags$span("Biphasic", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), ", ",
-                                                  tags$span("Concentration", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), ", ",
-                                                  tags$span("Replicate", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), ", ",
-                                                  tags$span("Response", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), "."  
+                                                p(tags$span("Factors", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), 
+                                                  " (if applicable, e.g. Protein, Compound, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name), ",
+                                                  tags$span("Biphasic", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), ", ",
+                                                  tags$span("Concentration", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), ", ",
+                                                  tags$span("Replicate", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), ", ",
+                                                  tags$span("Response", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), "."  
                                                 ),
                                                 div(style = "margin-top: -10px"),
                                                 p(em("Click the question mark to see the detailed requirments")) %>% 
@@ -164,12 +158,12 @@ ui <- fluidPage(
                                                 p("The data should be in", tags$b(a(href = "https://r4ds.had.co.nz/tidy-data.html", "tidy format")), 
                                                   "with ", tags$b("column order"), " as the follows:"), 
                                                 div(style = "margin-top: -10px"), 
-                                                p(tags$span("Factors", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), 
-                                                  " (if applicable, e.g. Genotype, Treatment, ", tags$em("et al."), "; try to avoid using underscore in the name), ", 
-                                                  tags$span("Replicate", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), ", ", 
-                                                  tags$span("Before", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), ", ", 
-                                                  tags$span("After", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), ", ", 
-                                                  tags$span("Count", style = "font-size: 13px; font-weight: bold; background-color: #E3E3E3"), "."  
+                                                p(tags$span("Factors", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), 
+                                                  " (if applicable, e.g. Genotype, Treatment, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name), ", 
+                                                  tags$span("Replicate", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), ", ", 
+                                                  tags$span("Before", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), ", ", 
+                                                  tags$span("After", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), ", ", 
+                                                  tags$span("Count", style = "font-size: 13px; font-weight: bold; background-color: #c5c5c5"), "."  
                                                 ), 
                                                 div(style = "margin-top: -10px"), 
                                                 p(em("Click the question mark to see the detailed requirments")) %>% 
@@ -235,7 +229,7 @@ ui <- fluidPage(
                                                               value = "24,26,28,30,32,34,36,38,40,42,43,45,47,49,51,53,55,57,59,61,63,65,67,69,71,73,75,77,79,81,83,85,87,89,91,93,95")), 
                                                 div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
                                                 div(style = "display: inline-block; vertical-align:top; width: 100px;",
-                                                    textInput(inputId = "unit", label = "Unit", value = "s"))
+                                                    textInput(inputId = "unit", label = "Unit", value = "h"))
                                                ),
                                               
                                               div(style = "margin-top: 10px"), 
@@ -255,40 +249,34 @@ ui <- fluidPage(
                                               
                                               # Select the methods
                                               wellPanel(style = "background-color: #eaeaea;",
-                                                h4(tags$b("Select the method:")) %>% 
-                                                  helper(icon = "question-circle", 
-                                                         type = "markdown",
-                                                         content = "ED_Estimation_Methods",
-                                                         buttonLabel = "Close"),
-                                                div(style = "margin-top: -10px"), 
-                                                selectInput(inputId = "ed_methods",
-                                                            label = "",
-                                                            choices = c("Standard Method" = "stdd_method", 
-                                                                        "Serra-Greco Method" = "serra_greco_method"),
-                                                            selected = "stdd_method"),
-                                                conditionalPanel(condition = "input.ed_methods == 'stdd_method'",
-                                                                 # Select the Type of ED50
-                                                                 wellPanel(h4(tags$b(HTML(paste0("Type of ED", tags$sub("50"), ":")))) %>% 
-                                                                             helper(icon = "question-circle", 
-                                                                                    type = "markdown",
-                                                                                    content = "ED50_Type",
-                                                                                    buttonLabel = "Close"),
-                                                                           div(style = "margin-top: -15px"),
-                                                                           radioButtons(inputId = "ed50_type",
-                                                                                        label = "",
-                                                                                        choices = c("Absolute", "Relative"),
-                                                                                        selected = "Absolute"),
-                                                                 ),
-                                                                 conditionalPanel(condition = "input.ed50_type == 'Absolute'",
-                                                                   checkboxInput(inputId = "two_point_method",
-                                                                                 label = "Include Reed-Muench Method",
-                                                                                 value = FALSE)
-                                                                 )
-                                                                 
+                                                        h4(tags$b(HTML(paste0("Methods & Type of ED", tags$sub("50"), ":")))) %>% 
+                                                          helper(icon = "question-circle", 
+                                                                 type = "markdown",
+                                                                 content = "ED_Estimation_Methods",
+                                                                 buttonLabel = "Close"),
+                                                        wellPanel(
+                                                          tags$span(HTML(paste0("- Type of ED", tags$sub("50"), ":")), style = "font-size: 16px; font-weight: bold;"),
+                                                          radioButtons(inputId = "ed50_type",
+                                                                       label = "",
+                                                                       choices = c("Absolute", "Relative"),
+                                                                       selected = "Absolute")
+                                                        ),
+                                                        wellPanel(
+                                                        tags$span("- ED estimation method:", style = "font-size: 16px; font-weight: bold;"),
+                                                        # Select the Type of ED50
+                                                        selectInput(inputId = "ed_methods",
+                                                                    label = "",
+                                                                    choices = c("Ritz-Gerhard Method" = "stdd_method", 
+                                                                                "Serra-Greco Method" = "serra_greco_method"),
+                                                                    selected = "stdd_method"), 
+                                                        conditionalPanel(condition = "input.ed50_type == 'Absolute'",
+                                                                         div(style = "margin-top: -10px"), 
+                                                                         checkboxInput(inputId = "two_point_method",
+                                                                                       label = "Include Reed-and-Muench Method",
+                                                                                       value = FALSE)
+                                                                         )
+                                                        )                 
                                                 ),
-                                                textInput(inputId = "bp", label = "Minimum dose:", value = "default")
-                                              ),
-                                              
                                               
                                               # Select the candidate models
                                               wellPanel(style = "background-color: #eaeaea;",
@@ -312,29 +300,29 @@ ui <- fluidPage(
                                                   fluidRow(
                                                     div(style = "display:flex;align-items:center;", 
                                                         column(6, div(style = "display:flex;align-items:center;", checkboxInput("LL4", "Log-logistic (4 parms)", TRUE))),
-                                                        column(3, textInput("LL4_c", NULL, "NA")),
-                                                        column(3, textInput("LL4_d", NULL, "NA"))
+                                                        column(3, textInput("LL4_c", NULL, "Not Fixed", width = "100%")),
+                                                        column(3, textInput("LL4_d", NULL, "Not Fixed", width = "100%"))
                                                     )
                                                   ),
                                                   fluidRow(
                                                     div(style = "display: flex; justify-content: center; align-items: center;", 
                                                         column(6, div(style = "display:flex;align-items:center;", checkboxInput("LL5", "Log-logistic (5 parms)", TRUE))),
-                                                        column(3, textInput("LL5_c", NULL, "NA")),
-                                                        column(3, textInput("LL5_d", NULL, "NA"))
+                                                        column(3, textInput("LL5_c", NULL, "Not Fixed")),
+                                                        column(3, textInput("LL5_d", NULL, "Not Fixed"))
                                                     )
                                                   ),
                                                   fluidRow(
                                                     div(style = "display: flex; justify-content: center; align-items: center;", 
                                                         column(6, div(style = "display:flex;align-items:center;", checkboxInput("W1", "Weibull I", TRUE))),
-                                                        column(3, textInput("W1_c", NULL, "NA")),
-                                                        column(3, textInput("W1_d", NULL, "NA"))
+                                                        column(3, textInput("W1_c", NULL, "Not Fixed")),
+                                                        column(3, textInput("W1_d", NULL, "Not Fixed"))
                                                     )
                                                   ),
                                                   fluidRow(
                                                     div(style = "display: flex; justify-content: center; align-items: center;", 
                                                         column(6, div(style = "display:flex;align-items:center;", checkboxInput("W2", "Weibull II", TRUE))),
-                                                        column(3, textInput("W2_c", NULL, "NA")),
-                                                        column(3, textInput("W2_d", NULL, "NA"))
+                                                        column(3, textInput("W2_c", NULL, "Not Fixed")),
+                                                        column(3, textInput("W2_d", NULL, "Not Fixed"))
                                                     )
                                                   )
                                                 ), 
@@ -395,45 +383,27 @@ ui <- fluidPage(
                                                             label = "",
                                                             choices = c("Akaike's Information Criterion" = "AIC", 
                                                                         "Bayesian Information Criteria" = "BIC", 
-                                                                        "Log Likelihood values" = "logLik", 
                                                                         "Lack-of-fit Test (against a one-way ANOVA model)" = "Lack_of_fit", 
-                                                                        "Residual Standard Error" = "Res_var"),
+                                                                        "Residual Standard Errors" = "Res_var"),
                                                             selected = "AIC")
+                                              ),
+                                              
+                                              # Minimum Dose
+                                              wellPanel(style = "background-color: #eaeaea;",
+                                                        h4(tags$b("Minimum dose:")),
+                                                        textInput(inputId = "bp", label = "", value = "default"),
+                                                        p(style = "text-align: left;", 
+                                                          tags$b("Note: "), "Please specify the minimum dose to achieve a logarithmic scale visual effect, applicable only when the minimum dose is zero. 
+                                                          The default is the base-10 value corresponding to the rounded minimum log10 value of all positive doses, as recommended by the ", 
+                                                          tags$span("drc", style = "font-weight: bold; background-color: #c5c5c5"), " package.")
+                                                        
                                               ),
                                               
                                               # Confirm the calculation
                                               div(style = "text-align: right;",
                                                   actionButton(inputId = "calculate_Butn",
-                                                               label = tags$b("Calculate")))# ,
+                                                               label = tags$b("Calculate")))
                                               
-                                              
-                                              # 
-                                              # checkboxGroupInput(inputId = "LL_list", 
-                                              #                    label = tags$em("- Log-logistic models"),
-                                              #                    choices = c("LL.2", "LL.3", "LL.3u", "LL.4", "LL.5"),
-                                              #                    inline = TRUE,
-                                              #                    selected = "LL.4"),
-                                              # checkboxGroupInput(inputId = "W_1_list",
-                                              #                    label = tags$em("- Weibull I models"),
-                                              #                    choices = c("W1.2", "W1.3", "W1.3u", "W1.4"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W1.4"),
-                                              # checkboxGroupInput(inputId = "W_2_list",
-                                              #                    label = tags$em("- Weibull II models"),
-                                              #                    choices = c("W2.2", "W2.3", "W2.3u", "W2.4"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W2.4"),
-                                              # 
-                                              # checkboxGroupInput(inputId = "BC_list", 
-                                              #                    label = tags$em("- Brain Cousens models"),
-                                              #                    choices = c("BC.4", "BC.5"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "BC.5"),
-                                              # checkboxGroupInput(inputId = "beta_list",
-                                              #                    label = tags$em("- beta model"),
-                                              #                    choices = c("DRC.beta"),
-                                              #                    inline = TRUE,
-                                              #                    selected = "DRC.beta")
                                               ),
                              # Time-to-event data:
                              conditionalPanel(condition = "input.datatype == 'te'", 
@@ -455,25 +425,25 @@ ui <- fluidPage(
                                                 fluidRow(
                                                   div(style = "display:flex;align-items:center;", 
                                                       column(8, div(style = "display:flex;align-items:center;", checkboxInput("LL4_te", "Log-logistic (4 parms)", TRUE))),
-                                                      column(4, selectInput("LL4_te_d", NULL, c("NA", "1"), "NA"))
+                                                      column(4, selectInput("LL4_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
                                                   )
                                                 ),
                                                 fluidRow(
                                                   div(style = "display: flex; justify-content: center; align-items: center;", 
                                                       column(8, div(style = "display:flex;align-items:center;", checkboxInput("LN", "Log-normal", TRUE))),
-                                                      column(4, selectInput("LN_d", NULL, c("NA", "1"), "NA"))
+                                                      column(4, selectInput("LN_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
                                                   )
                                                 ), 
                                                 fluidRow(
                                                   div(style = "display:flex;align-items:center;", 
                                                       column(8, div(style = "display:flex;align-items:center;", checkboxInput("W1_te", "Weibull I", TRUE))),
-                                                      column(4, selectInput("W1_te_d", NULL, c("NA", "1"), "NA"))
+                                                      column(4, selectInput("W1_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
                                                   )
                                                 ), 
                                                 fluidRow(
                                                   div(style = "display:flex;align-items:center;", 
                                                       column(8, div(style = "display:flex;align-items:center;", checkboxInput("W2_te", "Weibull II", TRUE))),
-                                                      column(4, selectInput("W2_te_d", NULL, c("NA", "1"), "NA"))
+                                                      column(4, selectInput("W2_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
                                                   )
                                                 )
                                               ),
@@ -497,28 +467,6 @@ ui <- fluidPage(
                                               div(style = "text-align: right;",
                                                   actionButton(inputId = "calculate_Butn_te",
                                                                label = tags$b("Calculate")))
-                                              
-                                              # , 
-                                              # checkboxGroupInput(inputId = "LL_list_te", 
-                                              #                    label = tags$em("- Log-logistic models"),
-                                              #                    choices = c("LL.2", "LL.3"),
-                                              #                    inline = TRUE,
-                                              #                    selected = "LL.3"),
-                                              # checkboxGroupInput(inputId = "W_1_list_te",
-                                              #                    label = tags$em("- Weibull I models"),
-                                              #                    choices = c("W1.2", "W1.3"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W1.3"),
-                                              # checkboxGroupInput(inputId = "W_2_list_te",
-                                              #                    label = tags$em("- Weibull II models"),
-                                              #                    choices = c("W2.2", "W2.3"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "W2.3"),
-                                              # checkboxGroupInput(inputId = "LN_list_te",
-                                              #                    label = tags$em("- Log-normal models"),
-                                              #                    choices = c("LN.2", "LN.3"),
-                                              #                    inline = TRUE, 
-                                              #                    selected = "LN.3")
                                               
                                               )
                              
@@ -594,6 +542,7 @@ ui <- fluidPage(
                          div(style = "margin-top: -10px"),
                          p(em("Wickham H (2014) Tidy Data. Journal of Statistical Software, Articles 59: 1–23")),
                          p(em("Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One. 10(12)")),
+                         p(em("Reed LJ, Muench H (1938) A simple method of estimating fifty percent endpoints. Am J Epidemiol 27: 493–497")),
                          p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86")),
                          p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
                          p(em("Vaidya, A.S. et al. (2019) Dynamic control of plant water use using designed ABA receptor agonists. Science, 366(6464)")),
