@@ -130,7 +130,7 @@ control_variance <- function(model, constant_variance, training_dose){
 
 # Curve df and ED50
 compute_ed <- function(opt_mod, rl = 1.349, dataframe, 
-                       constantVar, conf_interval, interval_type, bp, minidose) {
+                       constantVar, conf_interval, interval_type, bp, minidose, ed50_type) {
   # dataframe <- Data[1, ] %>% unnest()
   # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = W1.4(fixed = c(NA, NA, NA, NA)))
   # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = BC.5())
@@ -185,7 +185,11 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
       }
       
       # calculate the half max response in the first phase under the concs tested in the experiment
-      half_resp <- max(conf_interval_cv[doseRange_1st, 1]) - (abs(max(conf_interval_cv[doseRange_1st, 1]) - min(conf_interval_cv[doseRange_1st, 1]))/2)
+      if (ed50_type == "Absolute") {
+        half_resp <- 50
+      } else {
+        half_resp <- max(conf_interval_cv[doseRange_1st, 1]) - (abs(max(conf_interval_cv[doseRange_1st, 1]) - min(conf_interval_cv[doseRange_1st, 1]))/2)
+      }
       
       # Export the nested data for generate plot
       curve_df <- conf_interval_cv %>% dplyr::select(1) %>% mutate(Conc = doseRange)
@@ -269,11 +273,11 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
 }
 
 # Export results
-compute_ed_SG <- function(df, fct, bp, minidose){
+compute_ed_SG <- function(df, fct, bp, minidose, ed50_type){
   tempObj <- try(eval(parse(text = paste0("drm(Response ~ Conc, data = df, fct = ", fct, ")"))), silent = FALSE)
   if (!inherits(tempObj, "try-error")){
     tempED <- compute_ed(opt_mod = tempObj, rl = 1.349, dataframe = df, 
-                         constantVar = TRUE, interval_type = "delta", conf_interval = 0.95, bp = bp, minidose)
+                         constantVar = TRUE, interval_type = "delta", conf_interval = 0.95, bp = bp, minidose, ed50_type)
   }else{
     tempED <- matrix(NA, 1, 16) %>% as.data.frame()
   }
@@ -287,6 +291,7 @@ compute_ed_SG <- function(df, fct, bp, minidose){
 ## Reed-and-Muench method --------------------------------------------------
 
 RM_method <- function(df){
+  # df <- tempMat[[2]][[1]]
   if(df$Conc_low == 0){
     x1 <- 0
   }else{
@@ -296,15 +301,93 @@ RM_method <- function(df){
   y1 <- df$Res_low
   y2 <- df$Res_high
   k <- (y2-y1)/(x2-x1)
-  b <- ((y1+y2)-(x1+x2)*k)/2
-  IC50 <- 10 ^ ((50-b)/k)
+  IC50 <- 10 ^ (x2-(y2-50)/k)
+  return(IC50)
+}
+
+RM_method_f <- function(df, ed50_type) {
+  
+  retMat_RM <- matrix(0, 1, 6)
+  if (ed50_type == "Absolute" && all(df$Biphasic == "N")) {
+    Df <- df %>%
+      dplyr::group_by(Conc) %>%
+      dplyr::summarise(mean = mean(Response)) %>% 
+      arrange(Conc)
+    Df <- Df %>% mutate("Conc_order" = rownames(Df))
+    n <- as.numeric(n_distinct(df$Replicate))
+    
+    # whether the IC50 is out of the concentration range the user provided
+    if (all(Df$mean > 50, na.rm = TRUE) | all(Df$mean < 50, na.rm = TRUE)){
+      # Estimate
+      retMat_RM[, 1] <- NA
+      # Std. Dev
+      retMat_RM[, 2] <- NA
+      # CV
+      retMat_RM[, 3] <- NA
+      # Std. Error
+      retMat_RM[, 4] <- NA
+      # Confidence Interval
+      retMat_RM[, 5] <- NA
+      retMat_RM[, 6] <- NA
+    }else{
+      # identify the two points that bracket the ED50
+      if (Df$mean[1] > 50) {
+        j <- 1
+        while(Df$mean[j] > 50) {j <- j +1}
+        ic50_max <- Df$Conc[j - 1]
+        ic50_min <- Df$Conc[j]
+      } else {
+        j <- 1
+        while(Df$mean[j] < 50) {j <- j +1}
+        ic50_max <- Df$Conc[j]
+        ic50_min <- Df$Conc[j - 1]
+      }
+      tempMat <- df %>% filter(Conc == ic50_max | Conc == ic50_min) %>% spread(Conc, Response)
+      clnm <- colnames(tempMat)
+      tempMat <- tempMat %>% mutate("L" = as.numeric(clnm[3]), "H" = as.numeric(clnm[4]))
+      colnames(tempMat) <- c("Biphasic", "Replicate", "Res_low", "Res_high", "Conc_low", "Conc_high")
+      tempMat <- tempMat %>% group_by(Replicate) %>% nest() %>% mutate("ED50" = map(data, RM_method))
+      tempMean <- mean(as.numeric(tempMat$ED50))
+      tempSD <- sd(as.numeric(tempMat$ED50))
+      # Estimate
+      retMat_RM[, 1] <- tempMean
+      # Std. Dev
+      retMat_RM[, 2] <- tempSD
+      # CV
+      retMat_RM[, 3] <- (tempSD/tempMean)*100
+      # Std. Error
+      retMat_RM[, 4] <- tempSD/sqrt(n)
+      # Confidence Interval
+      ci_l <- tempMean - tempSD*1.96/sqrt(n)
+      ci_u <- tempMean + tempSD*1.96/sqrt(n)
+      retMat_RM[, 5] <- ci_l
+      retMat_RM[, 6] <- ci_u
+    }
+    
+  } else {
+    # Estimate
+    retMat_RM[, 1] <- NA
+    # Std. Dev
+    retMat_RM[, 2] <- NA
+    # CV
+    retMat_RM[, 3] <- NA
+    # Std. Error
+    retMat_RM[, 4] <- NA
+    # Confidence Interval
+    retMat_RM[, 5] <- NA
+    retMat_RM[, 6] <- NA
+  }
+  colnames(retMat_RM) <- c("RM_ED50_Mean", "RM_ED50_SD", "RM_ED50_CV", "RM_ED50_SE", "RM_ED50L", "RM_ED50U")
+  retMat_RM <- as.data.frame(retMat_RM)
+  return(retMat_RM)
+  
 }
 
 ## Standard method ---------------------------------------------------------
 
 compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
-  # df <- Data$data[[3]]
-  # fct <- "LL.4(fixed = c(NA, 0, NA, NA))"
+  # df <- Data$data[[1]]
+  # fct <- "W1.4(fixed = c(NA, NA, NA, NA))"
   # fct <- "BC.5()"
   respns <- df$Response
   dose <- df$Conc
@@ -382,85 +465,11 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
     
     tempED <- as.data.frame(bmd_val)
     
-  }else{
+  } else {
     tempED <- matrix(NA, 1, 13) %>% as.data.frame()
     colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "Std_ED50_res", "Std_ED50_Mean", "Std_ED50_SE", "Std_ED50L", "Std_ED50U", 
                           "Std_BMD_res", "Std_BMD_Mean", "Std_BMD_SE", "Std_BMDL", "Std_BMDU")
   }
-  
-  # Reed-Muench method
-  retMat_RM <- matrix(0, 1, 6)
-  if (ed50_type == "Absolute" && all(df$Biphasic == "N")) {
-    Df <- df %>%
-      dplyr::group_by(Conc) %>%
-      dplyr::summarise(mean = mean(Response)) %>% 
-      arrange(Conc)
-    Df <- Df %>% mutate("Conc_order" = rownames(Df))
-    n <- as.numeric(n_distinct(df$Replicate))
-    
-    # whether the IC50 is out of the concentration range the user provided
-    if (all(Df$mean > 50, na.rm = TRUE) | all(Df$mean < 50, na.rm = TRUE)){
-      # Estimate
-      retMat_RM[, 1] <- NA
-      # Std. Dev
-      retMat_RM[, 2] <- NA
-      # CV
-      retMat_RM[, 3] <- NA
-      # Std. Error
-      retMat_RM[, 4] <- NA
-      # Confidence Interval
-      retMat_RM[, 5] <- NA
-      retMat_RM[, 6] <- NA
-    }else{
-      # identify the two points that bracket the ED50
-      if (Df$mean[1] > 50) {
-        j <- 1
-        while(Df$mean[j] > 50) {j <- j +1}
-        ic50_max <- Df$Conc[j - 1]
-        ic50_min <- Df$Conc[j]
-      } else {
-        j <- 1
-        while(Df$mean[j] < 50) {j <- j +1}
-        ic50_max <- Df$Conc[j]
-        ic50_min <- Df$Conc[j - 1]
-      }
-      tempMat <- df %>% filter(Conc == ic50_max | Conc == ic50_min) %>% spread(Conc, Response) %>% mutate("L" = ic50_min, "H" = ic50_max)
-      colnames(tempMat) <- c("Biphasic", "Replicate", "Res_low", "Res_high", "Conc_low", "Conc_high")
-      tempMat <- tempMat %>% group_by(Replicate) %>% nest() %>% mutate("ED50" = map(data, RM_method))
-      tempMean <- mean(as.numeric(tempMat$ED50))
-      tempSD <- sd(as.numeric(tempMat$ED50))
-      # Estimate
-      retMat_RM[, 1] <- tempMean
-      # Std. Dev
-      retMat_RM[, 2] <- tempSD
-      # CV
-      retMat_RM[, 3] <- (tempSD/tempMean)*100
-      # Std. Error
-      retMat_RM[, 4] <- tempSD/sqrt(n)
-      # Confidence Interval
-      ci_l <- tempMean - tempSD*1.96/sqrt(n)
-      ci_u <- tempMean + tempSD*1.96/sqrt(n)
-      retMat_RM[, 5] <- ci_l
-      retMat_RM[, 6] <- ci_u
-    }
-    
-  } else {
-    # Estimate
-    retMat_RM[, 1] <- NA
-    # Std. Dev
-    retMat_RM[, 2] <- NA
-    # CV
-    retMat_RM[, 3] <- NA
-    # Std. Error
-    retMat_RM[, 4] <- NA
-    # Confidence Interval
-    retMat_RM[, 5] <- NA
-    retMat_RM[, 6] <- NA
-  }
-  colnames(retMat_RM) <- c("RM_ED50_Mean", "RM_ED50_SD", "RM_ED50_CV", "RM_ED50_SE", "RM_ED50L", "RM_ED50U")
-  
-  tempED <- cbind(tempED, retMat_RM)
-  
   return(tempED)
 }
 
@@ -641,4 +650,3 @@ loess_fit_te <- function(df) {
   }
   return(temp_Ret)
 }
-
