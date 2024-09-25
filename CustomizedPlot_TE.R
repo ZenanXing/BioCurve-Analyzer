@@ -262,7 +262,7 @@ output$dl_report_2_te <- downloadHandler(
     
     # Set up parameters to pass to Rmd document
     params_2_te <- list(table = ET50_table(),
-                        n_var = ncol(data_predct_te())-4,
+                        n_var = ncol(data_predct_te())-2,
                         color_var = input$line_color_v_te,
                         Bestfit_dataframe = data_predct_te(),
                         ScatterPlot_dataframe = data_scat_te(),
@@ -273,7 +273,7 @@ output$dl_report_2_te <- downloadHandler(
                         font_family = input$font_family_te,
                         palette = input$palette_provd_te
     )
-    n_var <- ncol(data_predct_te())-4
+    n_var <- ncol(data_predct_te())-2
     if (n_var <= 1 ) {
       params_2_te <- list.append(params_2_te, facet_var_row = "", facet_var_col = "")
     } else {

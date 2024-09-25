@@ -91,13 +91,14 @@ data_scat_te <- reactive({
     arrange(across(1:(data_values_te$n_var+2))) %>% 
     group_by(across(1:(data_values_te$n_var+3))) %>% 
     dplyr::summarise(count_sum = sum(.data[[data_values_te$count]], na.rm = TRUE), .groups = 'drop') %>% 
-    tidyr::unite(all_of(colnames(data_te())[1:(data_values_te$n_var+1)]), col = 'colComb', sep = '_') %>% 
+    tidyr::unite(col = 'colComb', all_of(colnames(data_te())[1:(data_values_te$n_var+1)]), sep = '_') %>% 
     left_join(df_sum, by = 'colComb') %>% 
     mutate(pct = count_sum/sum)
   
-  data_scat_temp <- df_accsum %>% group_by(colComb) %>% dplyr::reframe(respns = cumsum(pct))
+  data_scat_temp <- df_accsum %>% arrange(across(1:2)) %>% group_by(colComb) %>% dplyr::reframe(respns = cumsum(pct))
   
   data_scat_te <- df_accsum %>% 
+    arrange(across(1:2)) %>%
     mutate(respns = data_scat_temp$respns) %>% 
     tidyr::separate(colComb, into = all_of(colnames(data_te())[1: (data_values_te$n_var+1)]), sep = '_') %>% 
     dplyr::select(all_of(colnames(data_te())[1: (data_values_te$n_var+3)]), respns)
@@ -540,7 +541,8 @@ data_predct_te <- eventReactive(input$plot_Butn_1_te, {
 #### Default Plot -------------------------------------------------------------------------------------------
 
 L_P_te <- reactive({
-  
+  req(data_predct_te())
+  req(df_et())
   n_var <- ncol(data_predct_te())-2
   
   # facet plot related
@@ -695,12 +697,12 @@ output$dl_report_te <- downloadHandler(
     # Set up parameters to pass to Rmd document
     params_1_te <- list(table = ET50_table(),
                         unit = input$unit,
-                        n_var = ncol(data_predct_te())-4,
+                        n_var = ncol(data_predct_te())-2,
                         color_var = input$line_color_v_te,
                         Bestfit_dataframe = data_predct_te(),
                         ScatterPlot_dataframe = data_scat_te()
     )
-    n_var <- ncol(data_predct_te())-4
+    n_var <- ncol(data_predct_te())-2
     if (n_var <= 1 ) {
       params_1_te <- list.append(params_1_te,
                                  facet_var_row = "",

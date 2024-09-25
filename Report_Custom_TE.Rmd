@@ -139,20 +139,20 @@ cbPalette = c("#00A4FF", "#FD7FEE", "#03DFCA", "#990A3A", "#F37B63", "#05B756", 
 # Line plot
 if (params$n_var == 0) {
    n_color <- 1
-   p <- ggplot(data = bestfit_dataframe, aes(x = Before, y = Response)) + 
+   p <- ggplot(data = bestfit_dataframe, aes(x = After, y = Response)) + 
        scale_color_manual(values = get_palette(cbPalette, n_color))
 } else {
    eval(parse(text = paste0("n_color <- isolate({n_distinct(scatterplot_dataframe$", color_var, ")})")))
-   p <- ggplot(data = bestfit_dataframe, aes(x = Before, y = Response, color = eval(parse(text = paste0(color_var))), 
+   p <- ggplot(data = bestfit_dataframe, aes(x = After, y = Response, color = eval(parse(text = paste0(color_var))), 
                                     group = eval(parse(text = color_var)))) + 
        scale_color_manual(color_var, values = get_palette(cbPalette, n_color), limits = legend_order)
 }
 
 # Scatter plot
 if (n_var == 0) {
-    p <- p + geom_point(data = scatterplot_dataframe, aes(x = Before, y = Response), alpha = 0.5)
+    p <- p + geom_point(data = scatterplot_dataframe, aes(x = After, y = Response), alpha = 0.5)
 } else {
-    p <- p + geom_point(data = scatterplot_dataframe, aes(x = Before, y = Response, group = eval(parse(text = color_var))), alpha = 0.5)
+    p <- p + geom_point(data = scatterplot_dataframe, aes(x = After, y = Response, group = eval(parse(text = color_var))), alpha = 0.5)
 }
 
 # Facet_wrap/Facet_grid
