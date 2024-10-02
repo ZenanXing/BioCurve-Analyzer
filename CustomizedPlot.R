@@ -34,7 +34,7 @@ observe({
   
   
   
-
+  
 })
 
 
@@ -49,19 +49,19 @@ output$tab4_side <- renderUI({
                     value = FALSE),
       conditionalPanel(condition = "input.label_ck == 1",
                        wellPanel(style = "background-color: #eaeaea;",
-                         # Title
-                         textInput(inputId = "plot_title", label = "Plot title:",
-                                   value = ""),
-                         div(style = "margin-top: -10px"),
-                         # X axis
-                         div(style = "vertical-align:top; width: 200px;",
-                             textInput(inputId = "x_label", label = "x axis:",
-                                       value = cus_plt_values$x)),
-                         div(style = "margin-top: -10px"),
-                         # Y axis
-                         div(style = "vertical-align:top; width: 200px;",
-                             textInput(inputId = "y_label", label = "y axis:",
-                                       value = cus_plt_values$y))
+                                 # Title
+                                 textInput(inputId = "plot_title", label = "Plot title:",
+                                           value = ""),
+                                 div(style = "margin-top: -10px"),
+                                 # X axis
+                                 div(style = "vertical-align:top; width: 200px;",
+                                     textInput(inputId = "x_label", label = "x axis:",
+                                               value = cus_plt_values$x)),
+                                 div(style = "margin-top: -10px"),
+                                 # Y axis
+                                 div(style = "vertical-align:top; width: 200px;",
+                                     textInput(inputId = "y_label", label = "y axis:",
+                                               value = cus_plt_values$y))
                        )),
       
       # Legend
@@ -73,17 +73,17 @@ output$tab4_side <- renderUI({
                           value = FALSE),
             conditionalPanel(condition = "input.legend_ck == 1",
                              wellPanel(style = "background-color: #eaeaea;",
-                               div(style = "vertical-align:top; width: 200px;",
-                                   textInput(inputId = "legend_title", label = "Legend title:",
-                                             value = cus_plt_values$legnd_tt)),
-                               div(style = "margin-top: -10px"),
-                               div(style = "vertical-align:top; width: 200px;",
-                                   textInput(inputId = "legend_order", label = "Legend order:",
-                                             value = cus_plt_values$legnd_order)),
-                               div(style = "margin-top: -10px"),
-                               div(style = "vertical-align:top; width: 200px;",
-                                   textInput(inputId = "legend_names", label = "Rename legend labels:",
-                                             value = cus_plt_values$legnd_nm))
+                                       div(style = "vertical-align:top; width: 200px;",
+                                           textInput(inputId = "legend_title", label = "Legend title:",
+                                                     value = cus_plt_values$legnd_tt)),
+                                       div(style = "margin-top: -10px"),
+                                       div(style = "vertical-align:top; width: 200px;",
+                                           textInput(inputId = "legend_order", label = "Legend order:",
+                                                     value = cus_plt_values$legnd_order)),
+                                       div(style = "margin-top: -10px"),
+                                       div(style = "vertical-align:top; width: 200px;",
+                                           textInput(inputId = "legend_names", label = "Rename legend labels:",
+                                                     value = cus_plt_values$legnd_nm))
                              ))
           )
         )
@@ -95,16 +95,16 @@ output$tab4_side <- renderUI({
                     value = FALSE),
       conditionalPanel(condition = "input.font_ck == 1",
                        wellPanel(style = "background-color: #eaeaea;",
-                         div(style = "vertical-align:top; width: 200px;",
-                             textInput(inputId = "font_size", label = "Base font size:",
-                                       value = cus_plt_values$fontsize)),
-                         div(style = "margin-top: -10px"),
-                         div(style = "vertical-align:top; width: 200px;",
-                             selectInput(inputId = "font_family", label = "Font family:",
-                                         choices = c("Times New Roman" = "serif",
-                                                     "Arial" = "sans",
-                                                     "Courier New" = "mono"),
-                                         selected = "sans"))
+                                 div(style = "vertical-align:top; width: 200px;",
+                                     textInput(inputId = "font_size", label = "Base font size:",
+                                               value = cus_plt_values$fontsize)),
+                                 div(style = "margin-top: -10px"),
+                                 div(style = "vertical-align:top; width: 200px;",
+                                     selectInput(inputId = "font_family", label = "Font family:",
+                                                 choices = c("Times New Roman" = "serif",
+                                                             "Arial" = "sans",
+                                                             "Courier New" = "mono"),
+                                                 selected = "sans"))
                        )),
       
       # Line-related
@@ -113,16 +113,57 @@ output$tab4_side <- renderUI({
                     value = FALSE),
       conditionalPanel(condition = "input.line_ck == 1",
                        wellPanel(style = "background-color: #eaeaea;",
-                         # Line color
-                         p(tags$b("Please provide a comma-separated list of hex colors.")),
-                         textInput(inputId = "palette_provd", label = NULL,
-                                   value = cus_plt_values$palette)
-                         
+                                 # Line color
+                                 p(tags$b("Please provide a comma-separated list of hex colors.")),
+                                 textInput(inputId = "palette_provd", label = NULL,
+                                           value = cus_plt_values$palette)
+                                 
+                                 # div(style = "vertical-align:top; width: 200px;",
+                                 #     selectInput(inputId = "line_clr_slct",
+                                 #                 label = "Line colors:",
+                                 #                 choices = c("Provide color list" = 1,
+                                 #                             "Select colors" = 2),
+                                 #                 selected = 1)),
+                                 # conditionalPanel(condition = "input.line_clr_slct == 1",
+                                 #                  em(p("Please provide a comma-separated list of hex colors.")),
+                                 #                  textInput(inputId = "palette_provd", label = NULL,
+                                 #                            value = cus_plt_values$palette)),
+                                 # conditionalPanel(condition = "input.line_clr_slct == 2",
+                                 #                  div(
+                                 #                    id = "header-section",
+                                 #                    div(id = "selected-cols-row",
+                                 #                        uiOutput(outputId = "selectedCols", inline = TRUE)),
+                                 #                    textInput(inputId = "palette_slct", label = "Line colors:",
+                                 #                              value = cus_plt_values$palette)
+                                 #                  )
+                                 #                  )
+                       )
       )
     )
   )
 })
 
+# output$selectedCols <- renderUI({
+#   lapply(seq_along(cus_plt_values$selectedCols), function(colNum) {
+#     cls <- "col col-transparent-box"
+#     if (colNum == cus_plt_values$selectedNum) {
+#       cls <- paste0(cls, " selected")
+#     }
+#     if (isColDark(cus_plt_values$selectedCols[colNum])) {
+#       cls <- paste0(cls, " col-dark")
+#     }
+#     div(
+#       class = cls,
+#       div(
+#         style = paste0("background:",
+#                        hex2rgba_str(cus_plt_values$selectedCols[colNum])),
+#         class = "selected-col-inner",
+#         `data-colnum` = colNum,
+#         colNum
+#       )
+#     )
+#   })
+# })
 
 # Change the legend label automatically when the legend order changes ----
 observeEvent(input$legend_order, {
@@ -135,17 +176,17 @@ observeEvent(input$legend_order, {
 #### Customized Plot -------------------------------------------------------------------------------------------
 custmz_P <- reactive({
   req(input$palette_provd)
-#  req(input$palette_slct)
+  #  req(input$palette_slct)
   n_var <- ncol(data_predct())-2
   p <- L_P()
   
   my_colors <- unlist(strsplit(input$palette_provd, ", "))
   
-#  if (input$line_clr_slct == 1) {
-#    my_colors <- unlist(strsplit(input$palette_provd, ", "))
-#  } else {
-#    my_colors <- unlist(strsplit(input$palette_slct, ", "))
-#  }
+  #  if (input$line_clr_slct == 1) {
+  #    my_colors <- unlist(strsplit(input$palette_provd, ", "))
+  #  } else {
+  #    my_colors <- unlist(strsplit(input$palette_slct, ", "))
+  #  }
   
   if (n_var == 0) {
     p <- p + 

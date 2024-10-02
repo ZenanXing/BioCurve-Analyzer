@@ -248,7 +248,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("W2.4", c_d$c, c_d$d, sep = "_"))
   }
-
+  
   ## Biphasic
   fctList_biphsc <- NULL
   if (any(data_scat()$Biphasic == "Y")) {
@@ -335,7 +335,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
   model_drc <- model_drc %>% 
     mutate(RM_method = purrr::pmap(list(RawData), RM_method_f, ed50_type = ed50_type)) %>% 
     unnest(RM_method)
-
+  
   # Fit the data to loess model
   if (n_var == 0) {
     loess_drc <- data_scat() %>% 
@@ -551,11 +551,11 @@ output$ed50_results <- renderUI({
       div(style = "margin-top: -10px"),
       DT::dataTableOutput("tb_ed") %>% shinycssloaders::withSpinner(),
       conditionalPanel(condition = "input.ed50_type == 'Absolute' && input.two_point_method == true",
-        h4(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-and-Muench Method")), style = "font-weight: bold;"),
-        div(style = "margin-top: -10px"),
-        hr(),
-        div(style = "margin-top: -10px"),
-        DT::dataTableOutput("tb_ed_rm") %>% shinycssloaders::withSpinner(),
+                       h4(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-and-Muench Method")), style = "font-weight: bold;"),
+                       div(style = "margin-top: -10px"),
+                       hr(),
+                       div(style = "margin-top: -10px"),
+                       DT::dataTableOutput("tb_ed_rm") %>% shinycssloaders::withSpinner(),
       ),
       h4("BMD Estimation Table", style = "font-weight: bold;"),
       div(style = "margin-top: -10px"),
@@ -626,17 +626,17 @@ output$plot_layout_ui <- renderUI({
   req(data_values$n_var >= 0)
   if(data_values$n_var != 0) {
     wellPanel(style = "background-color: #eaeaea;",
-      h4(tags$b("Layout")),
-      selectInput(inputId = "line_color_v",
-                  label = "Set line colors according to:",
-                  choices = colnames(data())[1:data_values$n_var],
-                  selected = colnames(data())[1]),   
-      if (data_values$n_var > 1) {
-        selectInput(inputId = "facet_row_v",
-                    label = "Set faceting groups on the rows by:",
-                    choices = setdiff(colnames(data())[1:data_values$n_var], colnames(data())[1]),
-                    selected = setdiff(colnames(data())[1:data_values$n_var], colnames(data())[1])[1])
-      }
+              h4(tags$b("Layout")),
+              selectInput(inputId = "line_color_v",
+                          label = "Set line colors according to:",
+                          choices = colnames(data())[1:data_values$n_var],
+                          selected = colnames(data())[1]),   
+              if (data_values$n_var > 1) {
+                selectInput(inputId = "facet_row_v",
+                            label = "Set faceting groups on the rows by:",
+                            choices = setdiff(colnames(data())[1:data_values$n_var], colnames(data())[1]),
+                            selected = setdiff(colnames(data())[1:data_values$n_var], colnames(data())[1])[1])
+              }
     )
   }
 })
@@ -791,7 +791,7 @@ data_predct <- eventReactive(input$plot_Butn_1, {
   #}
   
   return(data_predct)
-
+  
 })
 
 
@@ -988,13 +988,13 @@ L_P <- reactive({
     }
   }
   
-#  # Responses
-#  if (input$plot_resline_ck == TRUE) {
-#    p <- p +
-#      # response lines
-#      geom_hline(data = anno_df, aes(yintercept = max_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-#      geom_hline(data = anno_df, aes(yintercept = min_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
-#  } 
+  #  # Responses
+  #  if (input$plot_resline_ck == TRUE) {
+  #    p <- p +
+  #      # response lines
+  #      geom_hline(data = anno_df, aes(yintercept = max_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+  #      geom_hline(data = anno_df, aes(yintercept = min_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+  #  } 
   
   p
   

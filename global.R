@@ -564,10 +564,14 @@ para_sig_test <- function(df, p) {
 
 
 #### ET50 ############################################################################################
+## Function to remove columns with only NA in the column
+remove_na_columns <- function(df) {
+  df[, !sapply(df, function(col) all(is.na(col)))]
+}
 
 ## Function to fit the time-to-event data to the best model annd estimate the ET50-----
 compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
-
+  
   ## Select the list of functions based the shape of the curves
   fctList_f <- c(fctList_monotnc)
   lenFL <- length(fctList_f)
@@ -603,7 +607,7 @@ compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
     tempObj <- try(eval(parse(text = paste0("drmte(Count ~ Before + After, data = df_temp, fct = ", 
                                             fctList_f[fct_select], "())"))), silent = FALSE)
     if (!inherits(tempObj, "try-error")){
-      tempED <- ED(tempObj, 50, units = df_temp$Replicate) %>% as.data.frame() %>% mutate(FctName = fctList_f[fct_select])
+      tempED <- ED(tempObj, 0.5, units = df_temp$Replicate, type = "absolute") %>% as.data.frame() %>% mutate(FctName = fctList_f[fct_select])
       
       ## curve_df
       timeRange <- seq_log(min(time_intv), max(time_intv), length.out = 500)

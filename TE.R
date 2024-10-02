@@ -5,38 +5,38 @@
 
 ##### tidy data ---------------------------------------------------------------------------------------------
 data_te <- eventReactive(input$upldData_Butn_te,
-                        {if (input$input_select_te == "smp") {
-                          data <- read.xlsx("Sample_data_te.xlsx")
-                        } else {
-                          if (input$input_select_te == "upld") {
-                            req(input$file1_te)
-                            inFile <- input$file1_te
-                            data <- read.xlsx(inFile$datapath)
-                          } else {
-                            req(input$text1_te)
-                            # Input the string from textArea
-                            tmp <- matrix(strsplit(input$text1_te, "\n")[[1]])
-                            # Separator selected
-                            Sep <- switch(input$SepP_te, '1'=",", '2'="\t", '3'=";")
-                            # Colnames
-                            Clnames <- strsplit(tmp[1], Sep)[[1]]
-                            # Generate the dataframe
-                            data <- matrix(0, length(tmp)-1, length(Clnames), dimnames = list(NULL, Clnames))
-                            for(i in 2:length(tmp)){
-                              Row <- strsplit(paste(tmp[i], Sep, Sep, sep = ""), Sep)[[1]]
-                              data[i-1, ] <- Row[-length(Row)]
-                            }
-                            data <- data.frame(data)
-                            colnames(data) <- Clnames
-                          }
-                        }
-                          # Convert the class of data in last 3 columns
-                          n_var <- ncol(data)-4
-                          if(n_var >= 0) {
-                            data[ , (n_var+1):ncol(data)] <- apply(data[ , (n_var+1):ncol(data)], 2, function(x) as.numeric(x))
-                          }
-                          return(data)   
-                        })
+                         {if (input$input_select_te == "smp") {
+                           data <- read.xlsx("Sample_data_spencer_paper.xlsx")
+                         } else {
+                           if (input$input_select_te == "upld") {
+                             req(input$file1_te)
+                             inFile <- input$file1_te
+                             data <- read.xlsx(inFile$datapath)
+                           } else {
+                             req(input$text1_te)
+                             # Input the string from textArea
+                             tmp <- matrix(strsplit(input$text1_te, "\n")[[1]])
+                             # Separator selected
+                             Sep <- switch(input$SepP_te, '1'=",", '2'="\t", '3'=";")
+                             # Colnames
+                             Clnames <- strsplit(tmp[1], Sep)[[1]]
+                             # Generate the dataframe
+                             data <- matrix(0, length(tmp)-1, length(Clnames), dimnames = list(NULL, Clnames))
+                             for(i in 2:length(tmp)){
+                               Row <- strsplit(paste(tmp[i], Sep, Sep, sep = ""), Sep)[[1]]
+                               data[i-1, ] <- Row[-length(Row)]
+                             }
+                             data <- data.frame(data)
+                             colnames(data) <- Clnames
+                           }
+                         }
+                           # Convert the class of data in last 3 columns
+                           n_var <- ncol(data)-4
+                           if(n_var >= 0) {
+                             data[ , (n_var+1):ncol(data)] <- apply(data[ , (n_var+1):ncol(data)], 2, function(x) as.numeric(x))
+                           }
+                           return(data)   
+                         })
 
 ##### reactive Variables - data_values------------------------------------------------------------------------------------
 data_values_te <- reactiveValues()
@@ -135,24 +135,25 @@ data_m_te <- reactive({
       mutate(After = as.numeric(After)) %>% 
       dplyr::summarise(Mean = mean(Response), .groups = 'drop')
   } else {
+    n_var <- data_values_te$n_var
     data_m_te <- data_scat_te() %>%
       tidyr::unite(Before, After, col = "time_int") %>%
       pivot_wider(names_from = time_int, values_from = Response) %>%
-      pivot_longer(cols = (data_values_te$n_var + 2):last_col(), names_to = "time_int", values_to = "Response") %>%
+      pivot_longer(cols = (n_var + 2):last_col(), names_to = "time_int", values_to = "Response") %>%
       pivot_wider(names_from = Replicate, values_from = Response) %>%
-      arrange(time_int) %>%
-      filter(!if_all((data_values_te$n_var + 2):last_col(), is.na)) %>%
-      group_by(across(1:data_values_te$n_var)) %>%
+      dplyr::arrange(across(1:n_var), time_int) %>%
+      filter(!if_all((n_var + 2):last_col(), is.na)) %>%
+      group_by(across(1:n_var)) %>%
       nest() %>%
-      mutate(data = map(data, ~ .x %>% fill(everything(), .direction = "down"))) %>%
+      mutate(data = lapply(data, remove_na_columns)) %>% 
+      mutate(data = map(data, ~ .x %>% fill(everything(), .direction = "down") %>% pivot_longer(cols = 2:ncol(.x), names_to = "Replicate", values_to = "Response" ))) %>%
       unnest(cols = c(data)) %>%
       mutate(across(everything(), ~ replace_na(., 0))) %>%
-      arrange(across(1:data_values_te$n_var), time_int) %>%
-      pivot_longer(cols = (data_values_te$n_var + 2):last_col(), names_to = "Replicate", values_to = "Response") %>%
+      dplyr::arrange(across(1:n_var), time_int) %>%
       separate(time_int, into = c("Before", "After")) %>%
-      group_by(across(1:data_values_te$n_var), After) %>%
+      group_by(across(1:n_var), After) %>%
       mutate(After = as.numeric(After)) %>%
-      summarise(Mean = mean(Response, na.rm = TRUE), .groups = 'drop')
+      dplyr::summarise(Mean = mean(Response, na.rm = TRUE), .groups = 'drop')
   }
 })
 
@@ -204,7 +205,7 @@ lineplot_te <- reactive({
 output$dl_smp_te <- downloadHandler(
   filename = function(){"Sample_Data.xlsx"},
   content = function(file) {
-    smp <- read.xlsx("Sample_data_te.xlsx")
+    smp <- read.xlsx("Sample_data_spencer_paper.xlsx")
     write.xlsx(smp, file)
   }
 )
@@ -257,7 +258,7 @@ df_et <- eventReactive(input$calculate_Butn_te, {
     if (input$W2_te_d == "1") {fctList_monotnc <- c(fctList_monotnc, "W2.2")}
     if (input$W2_te_d == "NA") {fctList_monotnc <- c(fctList_monotnc, "W2.2", "W2.3")}
   }
-
+  
   # Criteria used to select the best model
   const <- input$crtrn_selected_te
   
@@ -368,10 +369,10 @@ observeEvent(input$tabs1, {
   req(df_et())
   # Show a message if some of curves cannot be fitted to any of the models
   if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_et()$FctName)) & input$datatype == 'te') {
-      shinyalert(title = "Attention", 
-                 text = h4(tags$b("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting.")), 
-                 type = "warning",
-                 html = TRUE)
+    shinyalert(title = "Attention", 
+               text = h4(tags$b("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting.")), 
+               type = "warning",
+               html = TRUE)
   }
 })
 
@@ -380,14 +381,14 @@ output$plot_model_ui_te <- renderUI({
   req(df_et())
   if (any(is.na(df_et()$FctName)) & input$datatype == 'te') {
     wellPanel(style = "background-color: #eaeaea;",
-      h4("Models"),
-      p(HTML(paste0("The ET", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
-                    "Please choose the appropriate model to plot them."))),
-      selectInput(inputId = "model_selected_te",
-                  label = "Select the models:",
-                  choices = c("Simple line plot" = "line",
-                              "Loess model" = "loess"),
-                  selected = "line")
+              h4("Models"),
+              p(HTML(paste0("The ET", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
+                            "Please choose the appropriate model to plot them."))),
+              selectInput(inputId = "model_selected_te",
+                          label = "Select the models:",
+                          choices = c("Simple line plot" = "line",
+                                      "Loess model" = "loess"),
+                          selected = "line")
     )
   }
 })
@@ -398,17 +399,17 @@ output$plot_layout_ui_te <- renderUI({
   req(data_values_te$n_var >= 0)
   if(data_values_te$n_var != 0) {
     wellPanel(style = "background-color: #eaeaea;",
-      h4("Layout"),
-      selectInput(inputId = "line_color_v_te",
-                  label = "Set line colors according to:",
-                  choices = colnames(data_te())[1:data_values_te$n_var],
-                  selected = colnames(data_te())[1]),   
-      if (data_values_te$n_var > 1) {
-        selectInput(inputId = "facet_row_v_te",
-                    label = "Set faceting groups on the rows by:",
-                    choices = setdiff(colnames(data_te())[1:data_values_te$n_var], colnames(data_te())[1]),
-                    selected = setdiff(colnames(data_te())[1:data_values_te$n_var], colnames(data_te())[1])[1])
-      }
+              h4("Layout"),
+              selectInput(inputId = "line_color_v_te",
+                          label = "Set line colors according to:",
+                          choices = colnames(data_te())[1:data_values_te$n_var],
+                          selected = colnames(data_te())[1]),   
+              if (data_values_te$n_var > 1) {
+                selectInput(inputId = "facet_row_v_te",
+                            label = "Set faceting groups on the rows by:",
+                            choices = setdiff(colnames(data_te())[1:data_values_te$n_var], colnames(data_te())[1]),
+                            selected = setdiff(colnames(data_te())[1:data_values_te$n_var], colnames(data_te())[1])[1])
+              }
     )
   }
 })
@@ -576,7 +577,7 @@ L_P_te <- reactive({
     n_color <- isolate({n_distinct(data_scat_te()[[color_var]])})
     #eval(parse(text = paste0("n_color <- isolate({n_distinct(data_scat_te()$", color_var, ")})")))
     p <- ggplot(data = data_predct_te(), aes(x = After, y = Response, color = eval(parse(text = color_var)), 
-                                          group = eval(parse(text = color_var)))) + 
+                                             group = eval(parse(text = color_var)))) + 
       scale_color_manual(color_var, values = get_palette(cbPalette, n_color), limits = legend_order)
   }
   
@@ -585,7 +586,7 @@ L_P_te <- reactive({
   } else {
     p <- p + geom_point(data = isolate({data_scat_te()}), aes(x = After, y = Response, group = eval(parse(text = color_var))), alpha = 0.5)
   }
-
+  
   if (n_var >= 3) {
     p <- p +
       # facet_grid
@@ -603,7 +604,7 @@ L_P_te <- reactive({
     geom_line() +
     scale_x_log10() +
     scale_y_continuous(labels = scales::percent) +
-    xlab(paste0("Time (", input$unit, ")")) + 
+    xlab(paste0("Time (", isolate({input$unit}), ")")) + 
     ylab("Rate to Event") +
     theme_few() +
     panel_border(colour = "black", size = 1, remove = FALSE) +
@@ -641,7 +642,7 @@ L_P_te <- reactive({
     }
   }
   
-
+  
   # # Responses
   # if (input$plot_resline_ck_te == TRUE) {
   #   p <- p +
