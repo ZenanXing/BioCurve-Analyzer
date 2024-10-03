@@ -1,4 +1,4 @@
-#### ED50 ############################################################################################
+# ED50 ############################################################################################
 
 # log_breaks_cstm <- function(x) {10^seq(floor(log10(min(x))), ceiling(log10(max(x))), by = 1)}
 
@@ -563,13 +563,13 @@ para_sig_test <- function(df, p) {
 }
 
 
-#### ET50 ############################################################################################
+# T50 ############################################################################################
 ## Function to remove columns with only NA in the column
 remove_na_columns <- function(df) {
   df[, !sapply(df, function(col) all(is.na(col)))]
 }
 
-## Function to fit the time-to-event data to the best model annd estimate the ET50-----
+## Function to fit the time-to-event data to the best model annd estimate the T50-----
 compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
   
   ## Select the list of functions based the shape of the curves
@@ -594,7 +594,7 @@ compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
   }
   colnames(retMat) <- c("AIC", "BIC")
   
-  ## Calculate the ET50 for the best model
+  ## Calculate the T50 for the best model
   
   if (all(is.na(retMat[, 1]))) {
     # If none of the models can be applied to the data
@@ -623,7 +623,7 @@ compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
   }
   
   # More modification of the dataframe
-  colnames(temp_Ret) <- c("Curve_BestFit_data", "ET50_Mean", "ED50_SE", "FctName1")
+  colnames(temp_Ret) <- c("Curve_BestFit_data", "T50_Mean", "T50_SE", "FctName1")
   # Change the function name
   df_fct <- data.frame(
     FctName1 = c("LL.2", "LL.3", "LN.2", "LN.3", "W1.2", "W1.3", "W2.2", "W2.3", NA),
@@ -631,7 +631,7 @@ compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
   )
   temp_Ret <- temp_Ret %>% 
     left_join(df_fct, by = "FctName1") %>% 
-    dplyr::select(Curve_BestFit_data, ET50_Mean, ED50_SE, FctName)
+    dplyr::select(Curve_BestFit_data, T50_Mean, T50_SE, FctName)
   
   return(temp_Ret)
 }

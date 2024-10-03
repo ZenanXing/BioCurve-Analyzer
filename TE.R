@@ -229,7 +229,7 @@ observeEvent(input$clearText_Butn_te, {
 })
 
 
-############################################################ ET50 Estimation tab #######################################################################################
+############################################################ T50 Estimation tab #######################################################################################
 
 #### Reactive Objects - Model & ED50 info. #################################################################
 
@@ -317,25 +317,25 @@ df_et <- eventReactive(input$calculate_Butn_te, {
   return(df_et)
 })
 
-#### Output - ED50 table ###################################################################################
-ET50_table <- reactive({
+#### Output - T50 table ###################################################################################
+T50_table <- reactive({
   req(df_et())
   if (isolate({data_values_te$n_var}) != 0) {
     selected_var <- c(1:isolate({data_values_te$n_var}), # variable names
                       (isolate({data_values_te$n_var})+8), # model-related
-                      (isolate({data_values_te$n_var})+6):(isolate({data_values_te$n_var})+7)) # ET50
+                      (isolate({data_values_te$n_var})+6):(isolate({data_values_te$n_var})+7)) # T50
   } else {
     selected_var <- c((isolate({data_values_te$n_var})+8), # model-related
-                      (isolate({data_values_te$n_var})+6):(isolate({data_values_te$n_var})+7)) # ET50
+                      (isolate({data_values_te$n_var})+6):(isolate({data_values_te$n_var})+7)) # T50
   }
   df_temp <- df_et()[ , selected_var]
   df_temp[, (isolate({data_values_te$n_var})+2):ncol(df_temp)] <- round(df_temp[, (isolate({data_values_te$n_var})+2):ncol(df_temp)], 2)
-  colnames(df_temp)[(isolate({data_values_te$n_var})+1):ncol(df_temp)] <- c("Model", "ET50\nMean", "ET50\nSE")
+  colnames(df_temp)[(isolate({data_values_te$n_var})+1):ncol(df_temp)] <- c("Model", "T50\nMean", "T50\nSE")
   return(df_temp)
 })
 
 output$df2_te <- DT::renderDataTable({
-  ET50_table()
+  T50_table()
 })
 
 #### Triggered UI ##########################################################################################
@@ -680,7 +680,7 @@ output$dl_plot_te <- downloadHandler(
 output$dl_plot_df_te <- downloadHandler(
   filename = function(){paste0(input$file_name_1_te, ".xlsx")},
   content = function(file) {
-    list_of_datasets <- list("ED50_related" = ET50_table(), 
+    list_of_datasets <- list("ED50_related" = T50_table(), 
                              "Bestfit_dataframe" = data_predct_te(), 
                              "ScatterPlot_dataframe" = data_scat_te()
     )
@@ -696,7 +696,7 @@ output$dl_report_te <- downloadHandler(
     file.copy("Report_Default_TE.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
-    params_1_te <- list(table = ET50_table(),
+    params_1_te <- list(table = T50_table(),
                         unit = input$unit,
                         n_var = ncol(data_predct_te())-2,
                         color_var = input$line_color_v_te,

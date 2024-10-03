@@ -251,8 +251,8 @@ ui <- fluidPage(
                        
       ),
       
-      # ED50/ET50 Calculation Tab --------------------------------------------------------------------------------
-      conditionalPanel(condition = HTML(paste0("input.tabs1 ==", "'Step 2: ED", tags$sub("50"), "/ET", tags$sub("50"), " Estimation'")),
+      # ED50/T50 Calculation Tab --------------------------------------------------------------------------------
+      conditionalPanel(condition = HTML(paste0("input.tabs1 ==", "'Step 2: ED", tags$sub("50"), "/T", tags$sub("50"), " Estimation'")),
                        # Dose-response data
                        conditionalPanel(condition = "input.datatype == 'drc'", 
                                         
@@ -592,7 +592,7 @@ ui <- fluidPage(
                  div(style = "margin-top: -10px"),
                  hr(),
                  div(style = "margin-top: -10px"),
-                 p(HTML(paste0("1. Calculate the ED", tags$sub("50"), ", or ET", tags$sub("50"), " values from dose-response or time-to-event curves;"))),
+                 p(HTML(paste0("1. Calculate the ED", tags$sub("50"), ", or T", tags$sub("50"), " values from dose-response or time-to-event curves;"))),
                  p("2. Generate dose-response or time-to-event curves with customized appearance;"),
                  p("3. Export the dataframe used for plotting"),
                  br(),
@@ -636,7 +636,7 @@ ui <- fluidPage(
                  
         ),
         
-        tabPanel(title = HTML(paste0("Step 2: ED", tags$sub("50"), "/ET", tags$sub("50"), " Estimation")),
+        tabPanel(title = HTML(paste0("Step 2: ED", tags$sub("50"), "/T", tags$sub("50"), " Estimation")),
                  conditionalPanel(condition = "input.datatype == 'drc'",
                                   uiOutput(outputId = "ed50_results")),
                  conditionalPanel(condition = "input.datatype == 'te'",
