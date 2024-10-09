@@ -617,10 +617,10 @@ L_P_te <- reactive({
   # Annotation dataframe
   if (n_var == 0) {
     anno_df <- df_et() %>% dplyr::select((n_var+6):(n_var+8)) %>% 
-      mutate(ET50_res = 0.5, max_res = 1, min_res = 0)
+      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
   } else {
     anno_df <- df_et() %>% dplyr::select(1:n_var, (n_var+6):(n_var+8)) %>% 
-      mutate(ET50_res = 0.5, max_res = 1, min_res = 0)
+      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
   }
   
   # ED50
@@ -628,16 +628,16 @@ L_P_te <- reactive({
     if (n_var == 0 ) {
       p <- p +
         # response lines
-        #geom_hline(data = anno_df, aes(yintercept = ET50_res), linetype = "longdash", alpha = 0.5) + 
+        #geom_hline(data = anno_df, aes(yintercept = T50_res), linetype = "longdash", alpha = 0.5) + 
         # ed lines
-        geom_vline(data = anno_df, aes(xintercept = ET50_Mean), linetype = "longdash", alpha = 0.5)
+        geom_vline(data = anno_df, aes(xintercept = T50_Mean), linetype = "longdash", alpha = 0.5)
       
     } else {
       p <- p +
         # response lines
-        #geom_hline(data = anno_df, aes(yintercept = ET50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        #geom_hline(data = anno_df, aes(yintercept = T50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
         # ed lines
-        geom_vline(data = anno_df, aes(xintercept = ET50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+        geom_vline(data = anno_df, aes(xintercept = T50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
       
     }
   }

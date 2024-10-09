@@ -354,7 +354,6 @@ df_ed <- eventReactive(input$calculate_Butn, {
   # combine all the information
   if (n_var == 0) {
     df_ed <- data_m_sd() %>% nest() %>% cbind(loess_drc, model_drc)
-    colnames(df_ed)[1] <- "MeanData"
   } else {
     df_ed <- data_m_sd() %>% 
       group_by(across(1:n_var)) %>% nest() %>% 
@@ -362,9 +361,13 @@ df_ed <- eventReactive(input$calculate_Butn, {
       left_join(loess_drc, by = "colComb") %>% 
       left_join(model_drc, by ="colComb") %>% 
       separate(colComb, into = colnames(data_m_sd())[1:n_var], sep = "_")
-    colnames(df_ed)[n_var+1] <- "MeanData"
   }
-  
+  df_ed <- df_ed %>%
+    mutate(across(where(~ !is.list(.x)), ~ {
+      replaced <- if (is.logical(.x) || is.numeric(.x)) as.character(.x) else .x
+      replace_na(replaced, "/")
+    }))
+  colnames(df_ed)[n_var+1] <- "MeanData"
   return(df_ed)
   
 })
@@ -377,19 +380,10 @@ df_ed_exp <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
-  ed50_type <- isolate({input$ed50_type})
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+34))
-  if (ed_methods == 'serra_greco_method') { selected_var <- c(selected_var, (n_var+35):(n_var+37)) }
-  if (ed50_type == "Absolute") {
-    if (ed_methods == 'serra_greco_method') {
-      selected_var <- c(selected_var, (n_var+38):(n_var+43)) 
-    } else {
-      selected_var <- c(selected_var, (n_var+35):(n_var+40)) 
-    }
-  }
-  df_temp <- df_ed()[ , selected_var]
+  selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+40))
+  if (ed_methods == 'serra_greco_method') { selected_var <- c(selected_var, (n_var+41):(n_var+43)) }
   return(df_temp)
 })
 
@@ -420,7 +414,8 @@ ED50_table <- reactive({
     df_temp <- df_ed()[ , selected_var]
     colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Response\nat ED50", "ED50\nMean", "ED50\nSE", "ED50\nLower Bound", "ED50\nUpper Bound")
   }
-  df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
+  df_temp <- df_temp %>% mutate(across((n_var + 1):ncol(df_temp), ~ map_chr(.x, display_format)))
+  # df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
   return(df_temp)
 })
 
@@ -436,7 +431,8 @@ RM_ED50_table <- reactive({
     selected_var <- c(selected_var, (n_var+35):(n_var+37), (n_var+39):(n_var+40))
   }
   df_temp <- df_ed()[ , selected_var]
-  df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
+  df_temp <- df_temp %>% mutate(across((n_var + 1):ncol(df_temp), ~ map_chr(.x, display_format)))
+  #df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED50\nMean", "ED50\nSD", "ED50\nCV", "ED50\nLower Bound", "ED50\nUpper Bound")
   return(df_temp)
 })
@@ -459,7 +455,8 @@ BMD_table <- reactive({
   }
   df_temp <- df_ed()[ , selected_var]
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
-  df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
+  df_temp <- df_temp %>% mutate(across((n_var + 1):ncol(df_temp), ~ map_chr(.x, display_format)))
+  # df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
   return(df_temp)
 })
 

@@ -3,9 +3,10 @@
 # log_breaks_cstm <- function(x) {10^seq(floor(log10(min(x))), ceiling(log10(max(x))), by = 1)}
 
 display_format <- function(values) {
-  if (is.numeric(values)) {
+  if (values != "/") {
+    values <- as.numeric(values)
     return(
-      ifelse(values < 0.01, formatC(values, format = "E", digits = 2), round(values, digits = 2))
+      return(ifelse(values < 0.01, formatC(values, format = "E", digits = 2), format(round(values, digits = 2), nsmall = 2)))
     )
   } else {
     return(values)
@@ -510,29 +511,32 @@ loess_fit_drc <- function(df, bp, minidose) {
 
 stats_test <- function(df, fct) {
   
+  #df <- model_drc$data[[1]]
+  #fct <- model_drc$fctList_f[1]
   tempObj <- try(eval(parse(text = paste0("drm(Response ~ Conc, data = df, fct = ", fct, ")"))), silent = FALSE)
+  #plot(tempObj)
   
   retMat <- data.frame(matrix(0, 1, 6))
   # Test the model-fitting
   if (!inherits(tempObj, "try-error")){
     ## Lack-of-fit test (ANOVA-based)
     lactest <- try(modelFit(tempObj)[2, 5])
-    if (!inherits(lactest, "try-error")) {retMat[, 1] <- formatC(lactest, format = "E", digits = 2)} else {retMat[, 1] <- "error"}
+    if (!inherits(lactest, "try-error")&!is.na(lactest)) {retMat[, 1] <- formatC(lactest, format = "E", digits = 2)} else {retMat[, 1] <- "error"}
     # Lack-of-fit test - Neill's test
     ## The same test using 'neill.test'
     ntest <- try(neill.test(tempObj, df$Conc)[1, 2])
-    if (!inherits(ntest, "try-error")) {retMat[, 2] <- formatC(ntest, format = "E", digits = 2)} else {retMat[, 2] <- "error"}
+    if (!inherits(ntest, "try-error")&!is.na(ntest)) {retMat[, 2] <- formatC(ntest, format = "E", digits = 2)} else {retMat[, 2] <- "error"}
     ## No-effect test
     notest <- try(as.data.frame(noEffect(tempObj))[3, 1])
-    if (!inherits(notest, "try-error")) {retMat[, 3] <- formatC(notest, format = "E", digits = 2)} else {retMat[, 3] <- "error"}
+    if (!inherits(notest, "try-error")&!is.na(notest)) {retMat[, 3] <- formatC(notest, format = "E", digits = 2)} else {retMat[, 3] <- "error"}
     # Test for all parameters
     retMat[, 4] <- nest(tidy(tempObj, conf.int = TRUE))
     # Lack-of-fit test based on cumulated residuals
     ltest <- try(lin.test(tempObj, noksSim = 1000, plotit = FALSE) %>% as.numeric())
-    if (!inherits(ltest, "try-error")) {retMat[, 5] <- formatC(ltest, format = "E", digits = 2)} else {retMat[, 5] <- "error"}
+    if (!inherits(ltest, "try-error")&!is.na(ltest)) {retMat[, 5] <- formatC(ltest, format = "E", digits = 2)} else {retMat[, 5] <- "error"}
     # Runs Test
     rtest <- try(randtests::runs.test(resid(tempObj), threshold = 0)[["p.value"]])
-    if (!inherits(rtest, "try-error")) {retMat[, 6] <- formatC(rtest, format = "E", digits = 2)} else {retMat[, 6] <- "error"}
+    if (!inherits(rtest, "try-error")&!is.na(rtest)) {retMat[, 6] <- formatC(rtest, format = "E", digits = 2)} else {retMat[, 6] <- "error"}
     
   }else{
     retMat[, 1] <- NA
@@ -550,7 +554,7 @@ stats_test <- function(df, fct) {
 sig_test <- function(x, sign, p) {
   pvalue <- try(as.numeric(x))
   if (is.na(pvalue)) {
-    sig <- NA
+    sig <- "/"
   } else {
     sig <- eval(parse(text = paste0("ifelse(", x, sign, p, ", paste(x, '*'), x)")))
   }
@@ -572,6 +576,7 @@ remove_na_columns <- function(df) {
 ## Function to fit the time-to-event data to the best model annd estimate the T50-----
 compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
   
+  #df_temp <- model_te$RawData[[1]]
   ## Select the list of functions based the shape of the curves
   fctList_f <- c(fctList_monotnc)
   lenFL <- length(fctList_f)
@@ -606,8 +611,9 @@ compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
     fct_select <- as.numeric(retMat$rowNmbr[1])
     tempObj <- try(eval(parse(text = paste0("drmte(Count ~ Before + After, data = df_temp, fct = ", 
                                             fctList_f[fct_select], "())"))), silent = FALSE)
+    #plot(tempObj)
     if (!inherits(tempObj, "try-error")){
-      tempED <- ED(tempObj, 0.5, units = df_temp$Replicate, type = "absolute") %>% as.data.frame() %>% mutate(FctName = fctList_f[fct_select])
+      tempED <- ED(tempObj, 0.5, type = "absolute") %>% as.data.frame() %>% mutate(FctName = fctList_f[fct_select])
       
       ## curve_df
       timeRange <- seq_log(min(time_intv), max(time_intv), length.out = 500)
