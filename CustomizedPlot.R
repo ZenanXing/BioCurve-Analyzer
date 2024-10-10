@@ -26,15 +26,7 @@ observe({
   
   # Line_color--reactiveValues
   cus_plt_values$palette <- paste0(unlist(unique(g$data[[1]]["colour"])), collapse = ", ")
-  
-  #cus_plt_values$selectedCols <- unlist(strsplit(cus_plt_values$palette, ", "))
-  #cus_plt_values$selectedNum <- 1
-  #colUpdateSrc = 0
-  #plotError = NULL
-  
-  
-  
-  
+
 })
 
 
@@ -117,53 +109,11 @@ output$tab4_side <- renderUI({
                                  p(tags$b("Please provide a comma-separated list of hex colors.")),
                                  textInput(inputId = "palette_provd", label = NULL,
                                            value = cus_plt_values$palette)
-                                 
-                                 # div(style = "vertical-align:top; width: 200px;",
-                                 #     selectInput(inputId = "line_clr_slct",
-                                 #                 label = "Line colors:",
-                                 #                 choices = c("Provide color list" = 1,
-                                 #                             "Select colors" = 2),
-                                 #                 selected = 1)),
-                                 # conditionalPanel(condition = "input.line_clr_slct == 1",
-                                 #                  em(p("Please provide a comma-separated list of hex colors.")),
-                                 #                  textInput(inputId = "palette_provd", label = NULL,
-                                 #                            value = cus_plt_values$palette)),
-                                 # conditionalPanel(condition = "input.line_clr_slct == 2",
-                                 #                  div(
-                                 #                    id = "header-section",
-                                 #                    div(id = "selected-cols-row",
-                                 #                        uiOutput(outputId = "selectedCols", inline = TRUE)),
-                                 #                    textInput(inputId = "palette_slct", label = "Line colors:",
-                                 #                              value = cus_plt_values$palette)
-                                 #                  )
-                                 #                  )
                        )
       )
     )
   )
 })
-
-# output$selectedCols <- renderUI({
-#   lapply(seq_along(cus_plt_values$selectedCols), function(colNum) {
-#     cls <- "col col-transparent-box"
-#     if (colNum == cus_plt_values$selectedNum) {
-#       cls <- paste0(cls, " selected")
-#     }
-#     if (isColDark(cus_plt_values$selectedCols[colNum])) {
-#       cls <- paste0(cls, " col-dark")
-#     }
-#     div(
-#       class = cls,
-#       div(
-#         style = paste0("background:",
-#                        hex2rgba_str(cus_plt_values$selectedCols[colNum])),
-#         class = "selected-col-inner",
-#         `data-colnum` = colNum,
-#         colNum
-#       )
-#     )
-#   })
-# })
 
 # Change the legend label automatically when the legend order changes ----
 observeEvent(input$legend_order, {
@@ -181,12 +131,6 @@ custmz_P <- reactive({
   p <- L_P()
   
   my_colors <- unlist(strsplit(input$palette_provd, ", "))
-  
-  #  if (input$line_clr_slct == 1) {
-  #    my_colors <- unlist(strsplit(input$palette_provd, ", "))
-  #  } else {
-  #    my_colors <- unlist(strsplit(input$palette_slct, ", "))
-  #  }
   
   if (n_var == 0) {
     p <- p + 
@@ -292,7 +236,7 @@ output$dl_plot_2<- downloadHandler(
 output$dl_plot_df_2 <- downloadHandler(
   filename = function(){paste0(input$file_name_2, ".xlsx")},
   content = function(file) {
-    list_of_datasets <- list("ED50_related" = ED50_table(), 
+    list_of_datasets <- list("ED_related" = df_ed_exp(), 
                              "Bestfit_dataframe" = data_predct(), 
                              "ScatterPlot_dataframe" = data_scat(), 
                              "Mean_SD_dataframe" = data_m_sd()
@@ -309,7 +253,13 @@ output$dl_report_2 <- downloadHandler(
     file.copy("Report_Custom.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
-    params_2 <- list(table = ED50_table(),
+    params_2 <- list(table_ed50 = ED50_table(),
+                     table_rm = RM_ED50_table(),
+                     table_bmd = BMD_table(),
+                     table_stats = Stats_table(),
+                     ed50_type = input$ed50_type, 
+                     ed_methods = input$ed_methods,
+                     two_point_method = input$two_point_method,
                      n_var = ncol(data_predct())-2,
                      color_var = input$line_color_v,
                      Bestfit_dataframe = data_predct(),

@@ -1,5 +1,5 @@
 ---
-title: "The T~50~ App Report"
+title: "The T~50~ Estimation Report"
 output: 
  html_document:
    code_folding: show
@@ -60,7 +60,7 @@ library(rmarkdown)
 ### T~50~ Tables
 The T~50~s estimated by the app are listed below.
 ```{r echo = FALSE, results='asis'}
-kable(params$table, format = "html") %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F)
+kable(params$table, format = "html") %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
 ```
 
 

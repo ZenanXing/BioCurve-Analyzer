@@ -380,10 +380,39 @@ df_ed_exp <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+40))
-  if (ed_methods == 'serra_greco_method') { selected_var <- c(selected_var, (n_var+41):(n_var+43)) }
+  if (ed_methods == 'serra_greco_method') {
+    if (any(c("Brain-Cousens", "beta") %in% df_ed()$Model)) {
+      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+37)) 
+      colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
+                 "Monotonicity", "SG_Response_at_ED50", "SG_Low_ED50_Mean", "SG_Low_ED50_SE", "SG_Low_ED50_LowerBound", "SG_Low_ED50_UpperBound", 
+                 "SG_High_ED50_Mean", "SG_High_ED50_SE", "SG_High_ED50_LowerBound", "SG_High_ED50_UpperBound", 
+                 "SG_BMR", "SG_BMD_Mean", "SG_BMD_SE", "SG_BMD_LowerBound", "SG_BMD_UpperBound")
+    } else {
+      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+30), (n_var+34):(n_var+37))
+      colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
+                 "Monotonicity", "SG_Response_at_ED50", "SG_ED50_Mean", "SG_ED50_SE", "SG_ED50_LowerBound", "SG_ED50_UpperBound", 
+                 "SG_BMR", "SG_BMD_Mean", "SG_BMD_SE", "SG_BMD_LowerBound", "SG_BMD_UpperBound")
+    }
+  } else {
+    selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+34))
+    colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
+               "Monotonicity", "RG_Response_at_ED50", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50_LowerBound", "RG_ED50_UpperBound", 
+               "RG_BMR", "RG_BMD_Mean", "RG_BMD_SE", "RG_BMD_LowerBound", "RG_BMD_UpperBound")
+  }
+  
+  if (ed50_type == "absolute") {
+    if (ed_methods == 'serra_greco_method') { 
+      selected_var <- c(selected_var, (n_var+38):(n_var+43))
+    } else {
+      selected_var <- c(selected_var, (n_var+35):(n_var+40))
+    }
+    colnm <- c(colnm, "RM_ED50_Mean", "RM_ED50_SD", "RM_ED50_CV", "RM_ED50_SE", "RM_ED50_LowerBound", "RM_ED50_UpperBound")
+  }
+  df_temp <- df_ed()[ , selected_var]
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
   return(df_temp)
 })
 
@@ -401,9 +430,9 @@ ED50_table <- reactive({
     if (any(c("Brain-Cousens", "beta") %in% df_ed()$Model)) {
       selected_var <- c(selected_var, 
                         (n_var+31):(n_var+33)) # ED50 - right
-      colnm <- c("Response\nat ED50", "Low\nED50\nMean", "Low\nED50\nLower Bound", "Low\nED50\nUpper Bound", "High\nED50\nMean", "High\nED50\nLower Bound", "High\nED50\nUpper Bound")
+      colnm <- c("Response at ED50", "Low ED50 Mean", "Low ED50 Lower Bound", "Low ED50 Upper Bound", "High ED50 Mean", "High ED50 Lower Bound", "High ED50 Upper Bound")
     } else {
-      colnm <- c("Response\nat ED50", "ED50\nMean", "ED50\nLower Bound", "ED50\nUpper Bound")
+      colnm <- c("Response at ED50", "ED50 Mean", "ED50 Lower Bound", "ED50 Upper Bound")
     }
     
     df_temp <- df_ed()[ , selected_var]
@@ -412,7 +441,7 @@ ED50_table <- reactive({
     selected_var <- c(selected_var, 
                       (n_var+25):(n_var+29)) # ED50
     df_temp <- df_ed()[ , selected_var]
-    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Response\nat ED50", "ED50\nMean", "ED50\nSE", "ED50\nLower Bound", "ED50\nUpper Bound")
+    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Response at ED50", "ED50 Mean", "ED50 SE", "ED50 Lower Bound", "ED50 Upper Bound")
   }
   df_temp <- df_temp %>% mutate(across((n_var + 1):ncol(df_temp), ~ map_chr(.x, display_format)))
   # df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
@@ -433,7 +462,7 @@ RM_ED50_table <- reactive({
   df_temp <- df_ed()[ , selected_var]
   df_temp <- df_temp %>% mutate(across((n_var + 1):ncol(df_temp), ~ map_chr(.x, display_format)))
   #df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
-  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED50\nMean", "ED50\nSD", "ED50\nCV", "ED50\nLower Bound", "ED50\nUpper Bound")
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED50 Mean", "ED50 SD", "ED50 CV", "ED50 Lower Bound", "ED50 Upper Bound")
   return(df_temp)
 })
 
@@ -447,11 +476,11 @@ BMD_table <- reactive({
   if (ed_methods == 'serra_greco_method') {
     selected_var <- c(selected_var, 
                       (n_var+34):(n_var+37)) # BMD
-    colnm <- c("BMR", "BMD\nMean", "BMD\nLower Bound", "BMD\nUpper Bound")
+    colnm <- c("BMR", "BMD Mean", "BMD Lower Bound", "BMD Upper Bound")
   } else {
     selected_var <- c(selected_var, 
                       (n_var+30):(n_var+34)) # BMD
-    colnm <- c("BMR", "BMD\nMean", "BMD\nSE", "BMD\nLower Bound", "BMD\nUpper Bound")
+    colnm <- c("BMR", "BMD Mean", "BMD SE", "BMD Lower Bound", "BMD Upper Bound")
   }
   df_temp <- df_ed()[ , selected_var]
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
@@ -773,20 +802,6 @@ data_predct <- eventReactive(input$plot_Butn_1, {
     }
     data_predct <- rbind(data_predct, data_predct_na)
   }
-  
-  #n_var <-  ncol(df_ed())-20
-  #if (n_var == 0) {
-  #  data_predct <- df_ed() %>% 
-  #    dplyr::select("Curve_BestFit_data") %>% 
-  #    unnest()
-  #  colnames(data_predct)[1] <- "Response"
-  #} else {
-  #  data_predct <- df_ed() %>% 
-  #    dplyr::select(1:n_var, "Curve_BestFit_data") %>% 
-  #    unnest()
-  #  colnames(data_predct)[n_var+1] <- "Response"
-  #}
-  
   return(data_predct)
   
 })
@@ -916,7 +931,7 @@ L_P <- reactive({
       if (ed_methods == 'serra_greco_method') {
         p <- p +
           # response lines
-          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res, SG_ED50_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
           # ed lines - left
           geom_vline(data = anno_df, aes(xintercept = SG_ED50_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = SG_ED50L_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
@@ -984,15 +999,7 @@ L_P <- reactive({
       }
     }
   }
-  
-  #  # Responses
-  #  if (input$plot_resline_ck == TRUE) {
-  #    p <- p +
-  #      # response lines
-  #      geom_hline(data = anno_df, aes(yintercept = max_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-  #      geom_hline(data = anno_df, aes(yintercept = min_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
-  #  } 
-  
+
   p
   
 })
@@ -1022,7 +1029,7 @@ output$dl_plot<- downloadHandler(
 output$dl_plot_df <- downloadHandler(
   filename = function(){paste0(input$file_name_1, ".xlsx")},
   content = function(file) {
-    list_of_datasets <- list("ED50_related" = df_ed_exp(), 
+    list_of_datasets <- list("ED_related" = df_ed_exp(), 
                              "Bestfit_dataframe" = data_predct(), 
                              "ScatterPlot_dataframe" = data_scat(), 
                              "Mean_SD_dataframe" = data_m_sd()
@@ -1039,7 +1046,13 @@ output$dl_report <- downloadHandler(
     file.copy("Report_Default.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
-    params_1 <- list(table = ED50_table(),
+    params_1 <- list(table_ed50 = ED50_table(),
+                     table_rm = RM_ED50_table(),
+                     table_bmd = BMD_table(),
+                     table_stats = Stats_table(),
+                     ed50_type = input$ed50_type, 
+                     ed_methods = input$ed_methods,
+                     two_point_method = input$two_point_method,
                      n_var = ncol(data_predct())-2,
                      color_var = input$line_color_v,
                      Bestfit_dataframe = data_predct(),
@@ -1049,6 +1062,7 @@ output$dl_report <- downloadHandler(
                      label_x_axis = data_values$x,
                      label_y_axis = data_values$y
     )
+    
     n_var <- ncol(data_predct())-2
     if (n_var <= 1 ) {
       params_1 <- list.append(params_1,

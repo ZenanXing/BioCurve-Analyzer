@@ -8,7 +8,13 @@ output:
      collapsed: false
      smooth_scroll: false
 params:
-  table: NA
+  table_ed50: NA
+  table_rm: NA
+  table_bmd: NA
+  table_stats: NA
+  ed50_type: NA
+  ed_methods: NA
+  two_point_method: NA
   n_var: NA
   color_var: NA
   facet_var_row: NA
@@ -63,11 +69,41 @@ library(writexl)
 library(openxlsx)
 library(rmarkdown)
 ```
+```{css, echo = FALSE}
+caption {
+      color: Black;
+      font-size: 1.2em;
+    }
+```
 
-### ED~50~ Tables
-The ED~50~s estimated by the app are listed below.
+### Best-Fit Model and Model Assessment
+The selected best-fit model and the results of statistical tests are listed below.
 ```{r echo = FALSE, results='asis'}
-kable(params$table, format = "html") %>% kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F)
+# Generate the table with kable and style it with kableExtra
+kable(params$table_stats, format = "html") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+
+```
+
+
+### ED~50~ and BMD Table
+The chosen ED estimation method is `r if (params$ed_methods == 'stdd_method') {paste0("Ritz-Gerhard Method")} else {paste0("Serra-Greco Method")}`. The ED~50~s estimated by the app are listed below. 
+```{r echo = FALSE, results='asis'}
+
+# Generate the table with kable and style it with kableExtra
+## ED50 table
+kable(params$table_ed50, format = "html", caption = "ED~50~ Estimation Table") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+if (params$ed50_type == "Absolute" & params$two_point_method == TRUE) {
+  # Generate the table with kable and style it with kableExtra
+  kable(params$table_rm, format = "html", caption = "ED~50~ Estimation Table - Reed-and-Muench Method") %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+}
+
+# BMD Table
+kable(params$table_bmd, format = "html", caption = "BMD Estimation Table") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+
 ```
 
 

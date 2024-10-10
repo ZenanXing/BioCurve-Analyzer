@@ -5,9 +5,7 @@
 display_format <- function(values) {
   if (values != "/") {
     values <- as.numeric(values)
-    return(
-      return(ifelse(values < 0.01, formatC(values, format = "E", digits = 2), format(round(values, digits = 2), nsmall = 2)))
-    )
+    return(ifelse(values < 0.01, formatC(values, format = "E", digits = 2), format(round(values, digits = 2), nsmall = 2)))
   } else {
     return(values)
   }
@@ -384,7 +382,7 @@ RM_method_f <- function(df, ed50_type) {
   
 }
 
-## Standard method ---------------------------------------------------------
+## Ritz-Gerhard method ---------------------------------------------------------
 
 compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
   # df <- Data$data[[1]]
@@ -468,8 +466,8 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
     
   } else {
     tempED <- matrix(NA, 1, 13) %>% as.data.frame()
-    colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "Std_ED50_res", "Std_ED50_Mean", "Std_ED50_SE", "Std_ED50L", "Std_ED50U", 
-                          "Std_BMD_res", "Std_BMD_Mean", "Std_BMD_SE", "Std_BMDL", "Std_BMDU")
+    colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "RG_ED50_res", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50L", "RG_ED50U", 
+                          "RG_BMD_res", "RG_BMD_Mean", "RG_BMD_SE", "RG_BMDL", "RG_BMDU")
   }
   return(tempED)
 }

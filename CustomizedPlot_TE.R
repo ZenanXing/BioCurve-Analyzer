@@ -27,14 +27,6 @@ observe({
   # Line_color--reactiveValues
   cus_plt_values_te$palette <- paste0(unlist(unique(g$data[[1]]["colour"])), collapse = ", ")
   
-  #cus_plt_values_te$selectedCols <- unlist(strsplit(cus_plt_values_te$palette, ", "))
-  #cus_plt_values_te$selectedNum <- 1
-  #colUpdateSrc = 0
-  #plotError = NULL
-  
-  
-  
-  
 })
 
 
@@ -123,7 +115,6 @@ output$tab4_side_te <- renderUI({
   )
 })
 
-
 # Change the legend label automatically when the legend order changes ----
 observeEvent(input$legend_order_te, {
   updateTextInput(session, inputId = "legend_names_te",
@@ -164,7 +155,7 @@ custmz_P_te <- reactive({
           strip.text = element_text(size = font_size + 2),
           legend.text = element_text(size = font_size),
           legend.title = element_text(size = font_size + 2),
-          text = element_text(family = input$font_family))
+          text = element_text(family = input$font_family_te))
   
   
   
@@ -217,12 +208,12 @@ output$dl_2_te <- renderUI({
       # Notes
       div(style = "margin-top: 10px"),
       tags$b("Note:"),
-      p("1. You can only show up to 10 different dose-response-curves in the plots, and please try to avoid ", 
+      p("1. You can only show up to 10 different time-to-event-curves in the plots, and please try to avoid ", 
         tags$b(a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph")), "."),  
       div(style = "margin-top: -10px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
       div(style = "margin-top: -10px"),
-      p(HTML(paste0("2. The excel contains ET", tags$sub("50"), 
+      p(HTML(paste0("2. The excel contains T", tags$sub("50"), 
                     " table, both dataframes for generating scatterplot and lineplot.")))
       
     )
@@ -245,7 +236,7 @@ output$dl_plot_2_te<- downloadHandler(
 output$dl_plot_df_2_te <- downloadHandler(
   filename = function(){paste0(input$file_name_2_te, ".xlsx")},
   content = function(file) {
-    list_of_datasets <- list("ED50_related" = ET50_table(), 
+    list_of_datasets <- list("T50_related" = T50_table(), 
                              "Bestfit_dataframe" = data_predct_te(), 
                              "ScatterPlot_dataframe" = data_scat_te()
     )
@@ -261,7 +252,7 @@ output$dl_report_2_te <- downloadHandler(
     file.copy("Report_Custom_TE.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
-    params_2_te <- list(table = ET50_table(),
+    params_2_te <- list(table = T50_table(),
                         n_var = ncol(data_predct_te())-2,
                         color_var = input$line_color_v_te,
                         Bestfit_dataframe = data_predct_te(),

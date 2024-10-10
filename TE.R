@@ -236,6 +236,8 @@ observeEvent(input$clearText_Butn_te, {
 # Selected models and info. 
 df_et <- eventReactive(input$calculate_Butn_te, {
   
+  # number of variables
+  n_var <- isolate({data_values_te$n_var})
   # Model list
   fctList_monotnc <- NULL
   ## Log-logistic models
@@ -267,7 +269,7 @@ df_et <- eventReactive(input$calculate_Butn_te, {
   
   # Find the best model for each curve
   Data <- data_te()
-  if (data_values_te$n_var == 0) {
+  if (n_var == 0) {
     colnames(Data) <- c("Replicate", "Before", "After", "Count")
     model_te <- Data %>% 
       nest() %>% 
@@ -275,43 +277,43 @@ df_et <- eventReactive(input$calculate_Butn_te, {
       unnest(ED_info)
     colnames(model_te)[1] <- "RawData"
   } else {
-    colnames(Data) <- c(colnames(data_te())[1:data_values_te$n_var], "Replicate", "Before", "After", "Count")
+    colnames(Data) <- c(colnames(data_te())[1:n_var], "Replicate", "Before", "After", "Count")
     model_te <- Data %>% 
-      group_by(across(1:data_values_te$n_var)) %>% 
+      group_by(across(1:n_var)) %>% 
       nest() %>% 
       mutate(ED_info = purrr::pmap(list(data), compute_et, fctList_monotnc = fctList_monotnc, const = const, time_intv = time_intv)) %>% 
       unnest(ED_info) %>% 
-      tidyr::unite(col = "colComb", all_of(colnames(Data)[1:data_values_te$n_var]), sep = "_")
+      tidyr::unite(col = "colComb", all_of(colnames(Data)[1:n_var]), sep = "_")
     colnames(model_te)[2] <- "RawData"
   }
   
   # Fit the data to loess model
-  if (data_values_te$n_var == 0) {
+  if (n_var == 0) {
     loess_te <- data_scat_te() %>% 
       nest() %>% 
       mutate(Curve_Loess_data = purrr::map(data, loess_fit_te))
     colnames(loess_te)[1] <- "ScatterData"
   } else {
     loess_te <- data_scat_te() %>% 
-      group_by(across(1:data_values_te$n_var)) %>% 
+      group_by(across(1:n_var)) %>% 
       nest() %>% 
       mutate(Curve_Loess_data = purrr::map(data, loess_fit_te)) %>% 
-      tidyr::unite(col = "colComb", all_of(colnames(data_scat_te())[1:data_values_te$n_var]), sep = "_")
+      tidyr::unite(col = "colComb", all_of(colnames(data_scat_te())[1:n_var]), sep = "_")
     colnames(loess_te)[2] <- "ScatterData"
   }
   
   # combine all the information
-  if (data_values_te$n_var == 0) {
+  if (n_var == 0) {
     df_et <- data_m_te() %>% nest() %>% cbind(loess_te, model_te)
     colnames(df_et)[1] <- "MeanData"
   } else {
     df_et <- data_m_te() %>% 
-      group_by(across(1:data_values_te$n_var)) %>% nest() %>% 
-      tidyr::unite(col = "colComb", all_of(colnames(data_m_te())[1:data_values_te$n_var]), sep = "_") %>% 
+      group_by(across(1:n_var)) %>% nest() %>% 
+      tidyr::unite(col = "colComb", all_of(colnames(data_m_te())[1:n_var]), sep = "_") %>% 
       left_join(loess_te, by = "colComb") %>% 
       left_join(model_te, by ="colComb") %>% 
-      separate(colComb, into = colnames(data_m_te())[1:data_values_te$n_var], sep = "_")
-    colnames(df_et)[data_values_te$n_var+1] <- "MeanData"
+      separate(colComb, into = colnames(data_m_te())[1:n_var], sep = "_")
+    colnames(df_et)[n_var+1] <- "MeanData"
   }
   
   return(df_et)
@@ -320,17 +322,18 @@ df_et <- eventReactive(input$calculate_Butn_te, {
 #### Output - T50 table ###################################################################################
 T50_table <- reactive({
   req(df_et())
-  if (isolate({data_values_te$n_var}) != 0) {
-    selected_var <- c(1:isolate({data_values_te$n_var}), # variable names
-                      (isolate({data_values_te$n_var})+8), # model-related
-                      (isolate({data_values_te$n_var})+6):(isolate({data_values_te$n_var})+7)) # T50
+  n_var <- isolate({data_values_te$n_var})
+  if (n_var != 0) {
+    selected_var <- c(1:n_var, # variable names
+                      (n_var+8), # model-related
+                      (n_var+6):(n_var+7)) # T50
   } else {
-    selected_var <- c((isolate({data_values_te$n_var})+8), # model-related
-                      (isolate({data_values_te$n_var})+6):(isolate({data_values_te$n_var})+7)) # T50
+    selected_var <- c((n_var+8), # model-related
+                      (n_var+6):(n_var+7)) # T50
   }
-  df_temp <- df_et()[ , selected_var]
-  df_temp[, (isolate({data_values_te$n_var})+2):ncol(df_temp)] <- round(df_temp[, (isolate({data_values_te$n_var})+2):ncol(df_temp)], 2)
-  colnames(df_temp)[(isolate({data_values_te$n_var})+1):ncol(df_temp)] <- c("Model", "T50\nMean", "T50\nSE")
+  df_temp <- df_et()[ , selected_var] 
+  df_temp <- df_temp %>% mutate(across((n_var + 2):ncol(df_temp), ~ map_chr(.x, display_format)))
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "T50 Mean", "T50 SE")
   return(df_temp)
 })
 
@@ -343,7 +346,7 @@ output$et50_results <- renderUI({
   req(df_et())
   tagList(
     list(
-      h4(HTML(paste0("ET", tags$sub("50"), " Estimation Table")), align = 'center'),
+      h4(HTML(paste0("T", tags$sub("50"), " Estimation Table")), align = 'center'),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
@@ -382,7 +385,7 @@ output$plot_model_ui_te <- renderUI({
   if (any(is.na(df_et()$FctName)) & input$datatype == 'te') {
     wellPanel(style = "background-color: #eaeaea;",
               h4("Models"),
-              p(HTML(paste0("The ET", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
+              p(HTML(paste0("The T", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
                             "Please choose the appropriate model to plot them."))),
               selectInput(inputId = "model_selected_te",
                           label = "Select the models:",
@@ -424,10 +427,10 @@ observeEvent(input$line_color_v_te, {
 output$plot_resline_ui_te <- renderUI({
   tagList(
     list(
-      h5("Show the ET values："),
+      h5(HTML(paste0("Show the T", tags$sub("50"), " values："))),
       div(style = "margin-top: -20px"),
       div(style = "display: inline-block; vertical-align: top;",
-          checkboxInput(inputId = "plot_ed50_ck_te", label = HTML(paste0("ET", tags$sub("50"))), value = FALSE))#,
+          checkboxInput(inputId = "plot_ed50_ck_te", label = HTML(paste0("T", tags$sub("50"))), value = FALSE))#,
       #div(style = "display: inline-block; vertical-align: top;",
       #    checkboxInput(inputId = "plot_resline_ck_te", label = "Max & Min Responses", value = FALSE))
     )
@@ -480,7 +483,7 @@ output$dl_te <- renderUI({
       div(style = "margin-top: -10px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
       div(style = "margin-top: -10px"),
-      p(HTML(paste0("3. The excel contains ET", tags$sub("50"), 
+      p(HTML(paste0("3. The excel contains T", tags$sub("50"), 
                     " table, both dataframes for generating scatterplot and lineplot.")))
       
     )
@@ -628,14 +631,14 @@ L_P_te <- reactive({
     if (n_var == 0 ) {
       p <- p +
         # response lines
-        #geom_hline(data = anno_df, aes(yintercept = T50_res), linetype = "longdash", alpha = 0.5) + 
+        geom_hline(data = anno_df, aes(yintercept = T50_res), linetype = "longdash", alpha = 0.5) + 
         # ed lines
         geom_vline(data = anno_df, aes(xintercept = T50_Mean), linetype = "longdash", alpha = 0.5)
       
     } else {
       p <- p +
         # response lines
-        #geom_hline(data = anno_df, aes(yintercept = T50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        geom_hline(data = anno_df, aes(yintercept = T50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
         # ed lines
         geom_vline(data = anno_df, aes(xintercept = T50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
       
@@ -680,7 +683,7 @@ output$dl_plot_te <- downloadHandler(
 output$dl_plot_df_te <- downloadHandler(
   filename = function(){paste0(input$file_name_1_te, ".xlsx")},
   content = function(file) {
-    list_of_datasets <- list("ED50_related" = T50_table(), 
+    list_of_datasets <- list("T50_related" = T50_table(), 
                              "Bestfit_dataframe" = data_predct_te(), 
                              "ScatterPlot_dataframe" = data_scat_te()
     )
