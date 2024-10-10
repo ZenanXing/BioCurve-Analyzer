@@ -7,9 +7,9 @@ server <- function(input, output, session) {
   observe_helpers(withMathJax = TRUE)
   observe({
     if(input$datatype == 'drc') {
-      source(file.path("DRC.R"), local = TRUE)$value
+      source(file.path("src/DRC.R"), local = TRUE)$value
     } else {
-      source(file.path("TE.R"), local = TRUE)$value
+      source(file.path("src/TE.R"), local = TRUE)$value
     }
   })
   

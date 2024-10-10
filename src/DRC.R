@@ -7,7 +7,7 @@
 
 data <- eventReactive(input$upldData_Butn_drc,
                       {if (input$input_select == "smp") {
-                        data <- read.xlsx("Sample_data_OP_paper.xlsx")
+                        data <- read.xlsx("data/Sample_data_OP_paper.xlsx")
                       } else {
                         if (input$input_select == "upld") {
                           req(input$file1)
@@ -175,7 +175,7 @@ lineplot <- reactive({
 output$dl_smp <- downloadHandler(
   filename = function(){"Sample_Data.xlsx"},
   content = function(file) {
-    smp <- read.xlsx("Sample_data_OP_paper.xlsx")
+    smp <- read.xlsx("data/Sample_data_OP_paper.xlsx")
     write.xlsx(smp, file)
   }
 )
@@ -1043,7 +1043,7 @@ output$dl_report <- downloadHandler(
   filename = function(){paste0(input$file_name_1, ".html")},
   content = function(file) {
     tempReport <- file.path(tempdir(), "Report_Default.Rmd")
-    file.copy("Report_Default.Rmd", tempReport, overwrite = TRUE)
+    file.copy("reports/Report_Default.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
     params_1 <- list(table_ed50 = ED50_table(),
@@ -1096,4 +1096,4 @@ output$dl_report <- downloadHandler(
 
 ############################################################ Customized plot tab ##################################################################################################
 
-source(file.path("CustomizedPlot.R"), local = TRUE)$value
+source(file.path("src/CustomizedPlot.R"), local = TRUE)$value

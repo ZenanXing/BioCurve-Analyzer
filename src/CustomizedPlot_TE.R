@@ -249,7 +249,7 @@ output$dl_report_2_te <- downloadHandler(
   filename = function(){paste0(input$file_name_2_te, ".html")},
   content = function(file) {
     tempReport <- file.path(tempdir(), "Report_Custom_TE.Rmd")
-    file.copy("Report_Custom_TE.Rmd", tempReport, overwrite = TRUE)
+    file.copy("reports/Report_Custom_TE.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
     params_2_te <- list(table = T50_table(),
