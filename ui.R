@@ -28,9 +28,6 @@ library(bigsnpr)
 library(shinyhelper)
 library(broom)
 library(scales)
-# install.packages("remotes")
-# remotes::install_github("DoseResponse/bmd")
-library(bmd)
 library(randtests)
 library(car)
 library(stats)
@@ -252,7 +249,7 @@ ui <- fluidPage(
       ),
       
       # ED50/T50 Calculation Tab --------------------------------------------------------------------------------
-      conditionalPanel(condition = HTML(paste0("input.tabs1 ==", "'Step 2: ED", tags$sub("50"), "/BMD/T", tags$sub("50"), " Estimation'")),
+      conditionalPanel(condition = HTML(paste0("input.tabs1 ==", "'Step 2: ED", tags$sub("50"), "/T", tags$sub("50"), " Estimation'")),
                        # Dose-response data
                        conditionalPanel(condition = "input.datatype == 'drc'", 
                                         
@@ -587,7 +584,7 @@ ui <- fluidPage(
                  
         ),
         
-        tabPanel(title = HTML(paste0("Step 2: ED", tags$sub("50"), "/BMD/T", tags$sub("50"), " Estimation")),
+        tabPanel(title = HTML(paste0("Step 2: ED", tags$sub("50"), "/T", tags$sub("50"), " Estimation")),
                  conditionalPanel(condition = "input.datatype == 'drc'",
                                   uiOutput(outputId = "ed50_results")),
                  conditionalPanel(condition = "input.datatype == 'te'",

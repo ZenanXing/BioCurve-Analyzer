@@ -153,7 +153,6 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
       min_dose <- min(dose)
     }
     
-    # calculate the response level for bmd estimation
     # starting point response and sd
     starting_point <- predict(opt_mod, data.frame(dose = min(dose)))
     sd_level <- rl * sqrt(control_variance(model = opt_mod, constant_variance = constantVar, training_dose = dose))
@@ -199,23 +198,6 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
       
       ### SG Method - approx()
       
-      # calculate bmd and both bounds
-      
-      bmd <- stats::approx(x = conf_interval_cv[doseRange_1st, 1], y = doseRange[doseRange_1st], xout = response_level)$y
-      bmd1 <- try(stats::approx(x = conf_interval_cv[doseRange_1st, 2], y = doseRange[doseRange_1st], xout = response_level)$y)
-      bmd2 <- try(stats::approx(x = conf_interval_cv[doseRange_1st, 3], y = doseRange[doseRange_1st], xout = response_level)$y)
-      
-      # determine the upper and lower bound by monotonicity 
-      if (inherits(bmd1, "try-error")) { bmd1 <- NA }
-      if (inherits(bmd2, "try-error")) { bmd2 <- NA }
-      if(monotonic_behaviour == "Down"){
-        bmdl <- bmd1
-        bmdu <- bmd2
-      } else {
-        bmdl <- bmd2
-        bmdu <- bmd1
-      }
-      
       # calculate ed50 and both bounds
       ## left ed50
       half_con <-  stats::approx(x = conf_interval_cv[doseRange_1st, 1], y = doseRange[doseRange_1st], xout = half_resp)$y
@@ -257,8 +239,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
                min_res = min(conf_interval_cv[doseRange_1st, 1]),
                ED50_res = half_resp, 
                ED50_l_Mean = half_con, ED50_l_L = edl, ED50_l_U = edu,
-               ED50_r_Mean = half_con2, ED50_r_L = edl2, ED50_r_U = edu2, 
-               BMD_res = response_level, BMD_Mean = bmd, BMDL = bmdl, BMDU = bmdu)
+               ED50_r_Mean = half_con2, ED50_r_L = edl2, ED50_r_U = edu2)
       
     }
     
@@ -281,8 +262,7 @@ compute_ed_SG <- function(df, fct, bp, minidose, ed50_type){
     tempED <- matrix(NA, 1, 16) %>% as.data.frame()
   }
   colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "SG_max_res", "SG_min_res", 
-                        "SG_ED50_res", "SG_ED50_l", "SG_ED50L_l", "SG_ED50U_l", "SG_ED50_r", "SG_ED50L_r", "SG_ED50U_r", 
-                        "SG_BMD_res", "SG_BMD", "SG_BMDL", "SG_BMDU")
+                        "SG_ED50_res", "SG_ED50_l", "SG_ED50L_l", "SG_ED50U_l", "SG_ED50_r", "SG_ED50L_r", "SG_ED50U_r")
   return(tempED)
   
 }
@@ -438,16 +418,6 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
         half_resp <- try(predict(tempObj, newdata = data.frame(dose = ED_fct$Std_ED50_Mean)))
         if (!inherits(half_resp, "try-error")) {half_resp <- as.numeric(half_resp)} else {half_resp <- NA}
         
-        # bmd
-        bmd_fct <- try(bmd(tempObj, bmr = 0.1, backgType = "hybridSD", 
-                           def = "hybridAdd", backg = 2, display = FALSE))
-        if (!inherits(bmd_fct, "try-error")) { 
-          bmdFct <- bmd_fct %>% unlist() %>% t() %>% as.data.frame() %>% dplyr::select(3, 1, 6, 4, 5) %>% unlist() %>% t() %>% as.data.frame()
-        } else {
-          bmdFct <- matrix(NA, 1, 5)
-        }
-        colnames(bmdFct) <- c("Std_BMD_res", "Std_BMD_Mean", "Std_BMD_SE", "Std_BMDL", "Std_BMDU")
-        
         
       }
       # Export the info.
@@ -455,7 +425,7 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
         mutate(FctName = gsub("(.*)\\()", "\\1", fctName),
                Monotonicity = monotonic_behaviour, 
                Std_ED50_res = half_resp) %>% 
-        cbind(ED_fct, bmdFct)
+        cbind(ED_fct)
       
     }, error = function(e) {
       print(e)
@@ -466,8 +436,8 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
     
   } else {
     tempED <- matrix(NA, 1, 13) %>% as.data.frame()
-    colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "RG_ED50_res", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50L", "RG_ED50U", 
-                          "RG_BMD_res", "RG_BMD_Mean", "RG_BMD_SE", "RG_BMDL", "RG_BMDU")
+    colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", 
+                          "RG_ED50_res", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50L", "RG_ED50U")
   }
   return(tempED)
 }

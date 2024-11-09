@@ -10,7 +10,6 @@ output:
 params:
   table_ed50: NA
   table_rm: NA
-  table_bmd: NA
   table_stats: NA
   ed50_type: NA
   ed_methods: NA
@@ -86,7 +85,7 @@ kable(params$table_stats, format = "html") %>%
 ```
 
 
-### ED~50~ and BMD Table
+### ED~50~ Table
 The chosen ED estimation method is `r if (params$ed_methods == 'stdd_method') {paste0("Ritz-Gerhard Method")} else {paste0("Serra-Greco Method")}`. The ED~50~s estimated by the app are listed below. 
 ```{r echo = FALSE, results='asis'}
 
@@ -100,9 +99,6 @@ if (params$ed50_type == "Absolute" & params$two_point_method == TRUE) {
     kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
 }
 
-# BMD Table
-kable(params$table_bmd, format = "html", caption = "BMD Estimation Table") %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
 
 ```
 

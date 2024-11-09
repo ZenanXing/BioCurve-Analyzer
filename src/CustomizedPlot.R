@@ -255,7 +255,6 @@ output$dl_report_2 <- downloadHandler(
     # Set up parameters to pass to Rmd document
     params_2 <- list(table_ed50 = ED50_table(),
                      table_rm = RM_ED50_table(),
-                     table_bmd = BMD_table(),
                      table_stats = Stats_table(),
                      ed50_type = input$ed50_type, 
                      ed_methods = input$ed_methods,

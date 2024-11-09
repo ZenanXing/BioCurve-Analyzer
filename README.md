@@ -1,6 +1,6 @@
-# Biocurve-Analyzer
+# Biocurve Analyzer <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
 
-Simple overview of use/purpose.
+A shiny app.
 
 ## Description
 
