@@ -3,36 +3,37 @@
 
 library(shiny)
 library(shinyjs)
+library(shinyalert)
+library(shinycssloaders)
+library(shinyhelper)
 library(tidyverse)
+# library(writexl)
+library(openxlsx)
+library(purrr)
+library(broom)
 library(drc)
 library(drcte)
-library(DT)
 # install.packages("devtools")
 # devtools::install_github("onofriAndreaPG/aomisc")
 library(aomisc)
+library(DT)
+library(ggplot2)
 library(ggthemes)
 library(cowplot)
 library(extrafont)
 library(ggpubr)
-library(writexl)
-library(openxlsx)
-library(shinyalert)
-library(shinycssloaders)
 library(rmarkdown)
 library(knitr)
 library(kableExtra)
-library(colourpicker)
+# library(colourpicker)
 library(rlist)
-library(purrr)
 library(bigsnpr)
-library(shinyhelper)
-library(broom)
 library(scales)
-library(randtests)
+# library(randtests)
 library(car)
 library(stats)
 
-#library(bslib)# theme
+# library(bslib)# theme
 
 # Define UI for application
 ui <- fluidPage(
@@ -47,14 +48,14 @@ ui <- fluidPage(
   # Application title ############################################################################################
   titlePanel("BioCurve Analyzer"),
   
-  # Sidebar  #####################################################################################################
+  # Sidebar ######################################################################################################
   sidebarLayout(
     sidebarPanel(
-      # Welcome Tab ------------------------------------------------------------------------------------------
+      ## Welcome Tab ----------------------------------------------------------------------------------------------
       conditionalPanel(condition = "input.tabs1 == 'Welcome'",
                        h4(tags$b("Introduction"))
       ),
-      # Data Tab ---------------------------------------------------------------------------------------------
+      ## Data Tab -------------------------------------------------------------------------------------------------
       conditionalPanel(condition = "input.tabs1 == 'Step 1: Input data'",
                        
                        # Select the data type 
@@ -248,7 +249,7 @@ ui <- fluidPage(
                        
       ),
       
-      # ED50/T50 Calculation Tab --------------------------------------------------------------------------------
+      ## ED50/T50 Calculation Tab --------------------------------------------------------------------------------
       conditionalPanel(condition = HTML(paste0("input.tabs1 ==", "'Step 2: ED", tags$sub("50"), "/T", tags$sub("50"), " Estimation'")),
                        # Dose-response data
                        conditionalPanel(condition = "input.datatype == 'drc'", 
@@ -480,7 +481,7 @@ ui <- fluidPage(
                        
       ),
       
-      # Plot Tab -----------------------------------------------------------------------------------------
+      ## Plot Tab -----------------------------------------------------------------------------------------
       conditionalPanel(condition = "input.tabs1 == 'Step 3: Generate plot'",
                        # Show alert message if the user have curves cannot fit to any of the selected models
                        useShinyalert(),
@@ -521,7 +522,7 @@ ui <- fluidPage(
                        
       ),
       
-      # Customized Plot Tab --------------------------------------------------------------------------------
+      ## Customized Plot Tab --------------------------------------------------------------------------------
       conditionalPanel(condition = "input.tabs1 == 'Step 4: Customize plot'",
                        conditionalPanel(condition = "input.datatype == 'drc'",
                                         uiOutput(outputId = "tab4_side")),
@@ -530,7 +531,7 @@ ui <- fluidPage(
       )
     ),
     
-    # MainPanel  ############################################################################################
+    # MainPanel #############################################################################################
     mainPanel(
       tabsetPanel(
         id = "tabs1",

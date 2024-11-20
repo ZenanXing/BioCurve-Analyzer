@@ -255,7 +255,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
     ### Brain-Cousens models
     if (input$BC) {
       if(input$BC_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$BC_c}
-      if(input$BC_d == "Not Fixed") {d <- c("0", "NA")} else {d <- input$BC_d}
+      if(input$BC_d == "Not Fixed") {d <- c("NA")} else {d <- input$BC_d}
       c_d <- expand.grid(c = c, d = d)
       fctList_biphsc <- c(fctList_biphsc, paste("BC.5", c_d$c, c_d$d, sep = "_"))
     }

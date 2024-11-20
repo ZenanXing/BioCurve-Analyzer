@@ -2,12 +2,12 @@
 
 # log_breaks_cstm <- function(x) {10^seq(floor(log10(min(x))), ceiling(log10(max(x))), by = 1)}
 
-display_format <- function(values) {
-  if (values != "/") {
-    values <- as.numeric(values)
-    return(ifelse(values < 0.01, formatC(values, format = "E", digits = 2), format(round(values, digits = 2), nsmall = 2)))
+display_format <- function(val) {
+  if (val != "/") {
+    val <- as.numeric(val)
+    return(ifelse(val < 0.01, formatC(val, format = "E", digits = 2), format(round(val, digits = 2), nsmall = 2)))
   } else {
-    return(values)
+    return(val)
   }
 }
 
