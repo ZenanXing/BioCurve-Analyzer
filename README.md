@@ -53,7 +53,7 @@ To use the app properly, please ensure that your data is in a tidy format with t
 
 If you need any help or support related to this app, feel free to contact us at zxing001@ucr.edu, and the issues can also be reported on https://github.com/ZenanXing/Biocurve-Analyzer/issues.  
   
-<p style="font-size: 18px;"><strong>Enjoy using the app!</strong></p>  
+**Enjoy using the app!** 
   
 [(Back to top)](#biocurve-analyzer)
 
