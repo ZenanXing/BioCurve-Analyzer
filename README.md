@@ -1,8 +1,8 @@
-# Biocurve Analyzer 
+# Biocurve Analyzer  <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px; margin-bottom: 20px;"/>
 
 A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological curves.  
 
-## Description <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
+## Description
 
 **Biocurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED<sub>50</sub> and T<sub>50</sub> from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED<sub>50</sub>s more comprehensively, two types of ED<sub>50</sub>s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
 
@@ -52,12 +52,13 @@ To use the app properly, please ensure that your data is in a tidy format with t
 ### Help
 
 If you need any help or support related to this app, feel free to contact us at zxing001@ucr.edu, and the issues can also be reported on https://github.com/ZenanXing/Biocurve-Analyzer/issues.  
+**Enjoy using the app!**  
 
-### License & DOI
+## License & DOI
 
 This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details, and the DOI for the app is [DOI].
 
-### Citations
+## Citations
 
 If you use the Biocurve Analyzer, please cite our paper and the related papers listed below.
 
@@ -90,7 +91,6 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
   *Eckhardt J, Xing Z, Subramanian V, Vaidya A, Cutler S. [Robotic Imaging and Machine Learning Analysis of Seed Germination: Dissecting the Influence of ABA and DOG1 on Germination Uniformity](https://www.biorxiv.org/content/10.1101/2024.05.10.593629v1). Plant Biology. bioRxiv; 2024.*    
   
 
-**Enjoy using the app!**  
   
 [Back to top](#top)
 
