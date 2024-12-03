@@ -55,7 +55,7 @@ Biocurve Analyzer can be used both locally and online. The app can be installed 
 
 ### License & DOI
 
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details, and the DOI for the app is DOI.
+This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details, and the DOI for the app is [DOI].
 
 ### Citations
 
@@ -63,7 +63,7 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
 
 
 - **Our paper:**  
-*ZenanX, xxxxxxxx*  
+*[ZenanX, xxxxxxxx]*  
 
 - **Generate the curves:**  
 *[Ritz C, Baty F, Streibig JC, Gerhard D](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0146021). Dose-Response Analysis Using R. PLoS One. 2015;10:e0146021.*  
