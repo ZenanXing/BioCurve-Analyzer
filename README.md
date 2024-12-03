@@ -53,13 +53,14 @@ To use the app properly, please ensure that your data is in a tidy format with t
 
 If you need any help or support related to this app, feel free to contact us at zxing001@ucr.edu, and the issues can also be reported on https://github.com/ZenanXing/Biocurve-Analyzer/issues.  
   
-<p style="font-size: 18px;">**Enjoy using the app!**</p>  
+<p style="font-size: 18px;"><strong>Enjoy using the app!</strong></p>  
   
 [(Back to top)](#biocurve-analyzer)
 
 ## License & DOI
 
 This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details, and the DOI for the app is [DOI].  
+  
 [(Back to top)](#biocurve-analyzer)
 
 ## Citations
