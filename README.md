@@ -68,7 +68,7 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
 - **Generate the curves:**  
 *[Ritz C, Baty F, Streibig JC, Gerhard D](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0146021). Dose-Response Analysis Using R. PLoS One. 2015;10:e0146021.*  
 
-- **ED$_{50}$ estimation:**  
+- **ED<sub>50</sub> estimation:**  
   - **Reed-and-Muench Method:**  
   *Reed LJ, Muench H. [A simple method of estimating fifty percent endpoints](https://academic.oup.com/aje/article/27/3/493/99616). Am J Epidemiol. 1938;27:493–7.*  
   *Ramakrishnan MA. [Determination of 50% endpoint titer using a simple formula](https://www.wjgnet.com/2220-3249/full/v5/i2/85.htm). World J Virol. 2016;5:85–6.*  
