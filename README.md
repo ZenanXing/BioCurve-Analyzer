@@ -1,4 +1,4 @@
-# Biocurve Analyzer  <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px; margin-bottom: 20px;"/>
+# Biocurve Analyzer  <img src="www/biocurve_analyzer_logo.png" align="right" style="height:200px;"/>
 
 A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological curves.  
 
@@ -53,10 +53,12 @@ To use the app properly, please ensure that your data is in a tidy format with t
 
 If you need any help or support related to this app, feel free to contact us at zxing001@ucr.edu, and the issues can also be reported on https://github.com/ZenanXing/Biocurve-Analyzer/issues.  
 **Enjoy using the app!**  
+[(Back to top)](#biocurve-analyzer)
 
 ## License & DOI
 
 This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details, and the DOI for the app is [DOI].
+[(Back to top)](#biocurve-analyzer)
 
 ## Citations
 
@@ -92,5 +94,5 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
   
 
   
-[Back to top](#top)
+[(Back to top)](#biocurve-analyzer)
 
