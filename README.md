@@ -1,12 +1,12 @@
-### Biocurve Analyzer <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
+## Biocurve Analyzer <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
 
 A shiny app that can estimate ED~50~ and T~50~ from biological curves.  
 
-#### Description
+### Description
 
 **Biocurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED~50~ and T~50~ from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED~50~s more comprehensively, two types of ED~50~s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
 
-#### Getting Started
+### Getting Started
 
 Biocurve Analyzer can be used both locally and online. The app can be installed following the instructions below and it is also hosted on Shinyapps.io: link to the app.  
 
@@ -53,11 +53,11 @@ Biocurve Analyzer can be used both locally and online. The app can be installed 
 
   If you need any help or support related to this app, feel free to contact us at zxing001@ucr.edu, and the issues can also be reported on https://github.com/ZenanXing/Biocurve-Analyzer/issues.  
 
-#### License & DOI
+### License & DOI
 
 This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details, and the DOI for the app is DOI.
 
-#### Citations
+### Citations
 
 If you use the Biocurve Analyzer, please cite our paper and the related papers listed below.
 
@@ -68,7 +68,7 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
 - **Generate the curves:**  
 *[Ritz C, Baty F, Streibig JC, Gerhard D](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0146021). Dose-Response Analysis Using R. PLoS One. 2015;10:e0146021.*  
 
-- **ED~50~ estimation:**  
+- **ED_{50} estimation:**  
   - **Reed-and-Muench Method:**  
   *Reed LJ, Muench H. [A simple method of estimating fifty percent endpoints](https://academic.oup.com/aje/article/27/3/493/99616). Am J Epidemiol. 1938;27:493–7.*  
   *Ramakrishnan MA. [Determination of 50% endpoint titer using a simple formula](https://www.wjgnet.com/2220-3249/full/v5/i2/85.htm). World J Virol. 2016;5:85–6.*  
