@@ -1,57 +1,57 @@
-## Biocurve Analyzer <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
+# Biocurve Analyzer <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
 
 A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological curves.  
 
-### Description
+## Description
 
 **Biocurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED<sub>50</sub> and T<sub>50</sub> from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED<sub>50</sub>s more comprehensively, two types of ED<sub>50</sub>s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
 
-### Getting Started
+## Getting Started
 
 Biocurve Analyzer can be used both locally and online. The app can be installed following the instructions below and it is also hosted on Shinyapps.io: link to the app.  
 
-- **Installation**
+### Installation
 
-  To use Biocurve Analyzer locally, you can follow the steps.  
+To use Biocurve Analyzer locally, you can follow the steps.  
 
-    1. Install R and RStudio IDE. The app has been tested with R 4.4.1 and RStudio version 2024.04.2+764.  
+  1. Install R and RStudio IDE. The app has been tested with R 4.4.1 and RStudio version 2024.04.2+764.  
 
-    2. Clone or download the Biocurve Analyzer from the GitHub. You can either [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) using git or download the app as a ZIP file.  
-    In addition, these R packages should also be installed by from CRAN or GitHub using the code below.  
+  2. Clone or download the Biocurve Analyzer from the GitHub. You can either [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) using git or download the app as a ZIP file.  
+  In addition, these R packages should also be installed by from CRAN or GitHub using the code below.  
 
-        ```
-        # enabling and customizing the app
-        install.packages("shiny", "shinyjs", "shinyalert", "shinycssloaders", "shinyhelper")
-        
-        # data input and preprocessing
-        install.packages("tidyverse", "purrr", "broom", "bigsnpr", "openxlsx")
-        
-        # data fitting and model selection
-        install.packages("drc", "drcte")
-        install.packages("devtools")
-        devtools::install_github("onofriAndreaPG/aomisc")
-        
-        # model assessment
-        install.packages("scales", "car", "stats")
-        
-        # generating figures and report
-        install.packages("ggplot2", "ggthemes", "ggpubr", "cowplot", "extrafont", "rmarkdown", "knitr", "DT", "kableExtra", "rlist")
-        
-        ```
+      ```
+      # enabling and customizing the app
+      install.packages("shiny", "shinyjs", "shinyalert", "shinycssloaders", "shinyhelper")
+      
+      # data input and preprocessing
+      install.packages("tidyverse", "purrr", "broom", "bigsnpr", "openxlsx")
+      
+      # data fitting and model selection
+      install.packages("drc", "drcte")
+      install.packages("devtools")
+      devtools::install_github("onofriAndreaPG/aomisc")
+      
+      # model assessment
+      install.packages("scales", "car", "stats")
+      
+      # generating figures and report
+      install.packages("ggplot2", "ggthemes", "ggpubr", "cowplot", "extrafont", "rmarkdown", "knitr", "DT", "kableExtra", "rlist")
+      
+      ```
 
-    3. Run the shiny app using the following code in RStudio.
+  3. Run the shiny app using the following code in RStudio.
 
-        ```
-        shiny.runApp()
-        ```
+      ```
+      shiny.runApp()
+      ```
 
-- **Instructions with examples**
+### Instructions with examples
 
-  To use the app properly, please ensure that your data is in a tidy format with the columns in the right order. We have included two datasets from our previously published paper as examples, which you can download for reference. The detailed tutorial for the app is available [here](./Tutorial.pdf). 
+To use the app properly, please ensure that your data is in a tidy format with the columns in the right order. We have included two datasets from our previously published paper as examples, which you can download for reference. The detailed tutorial for the app is available [here](./Tutorial.pdf). 
 
-- **Help**
+### Help
 
-  If you need any help or support related to this app, feel free to contact us at zxing001@ucr.edu, and the issues can also be reported on https://github.com/ZenanXing/Biocurve-Analyzer/issues.  
+If you need any help or support related to this app, feel free to contact us at zxing001@ucr.edu, and the issues can also be reported on https://github.com/ZenanXing/Biocurve-Analyzer/issues.  
 
 ### License & DOI
 
