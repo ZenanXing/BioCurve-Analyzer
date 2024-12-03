@@ -1,8 +1,8 @@
-# Biocurve Analyzer <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
+# Biocurve Analyzer 
 
 A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological curves.  
 
-## Description
+## Description <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
 
 **Biocurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED<sub>50</sub> and T<sub>50</sub> from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED<sub>50</sub>s more comprehensively, two types of ED<sub>50</sub>s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
 
