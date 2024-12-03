@@ -1,10 +1,10 @@
 ## Biocurve Analyzer <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px;"/>
 
-A shiny app that can estimate ED~50~ and T~50~ from biological curves.  
+A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological curves.  
 
 ### Description
 
-**Biocurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED~50~ and T~50~ from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED~50~s more comprehensively, two types of ED~50~s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
+**Biocurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED<sub>50</sub> and T<sub>50</sub> from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED<sub>50</sub>s more comprehensively, two types of ED<sub>50</sub>s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
 
 ### Getting Started
 
@@ -79,7 +79,7 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
   - **Serra-Greco Method:**  
   *Serra A, Saarimäki LA, Fratello M, Marwah VS, Greco D. [BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data](https://academic.oup.com/bioinformatics/article/36/9/2932/5709037). Bioinformatics. 2020;36:2932–3.*  
   
-- **T~50~ estimation:**  
+- **T<sub>50</sub> estimation:**  
   *Onofri A, Mesgaran MB, Ritz C. [A unified framework for the analysis of germination, emergence, and other time-to-event data in weed science](https://www.cambridge.org/core/journals/weed-science/article/unified-framework-for-the-analysis-of-germination-emergence-and-other-timetoevent-data-in-weed-science/7DB0E039C9013D3E8F44FE32A3F42B88). Weed Sci. 2022;70:259–71.*
 
 - **Examples:**  
