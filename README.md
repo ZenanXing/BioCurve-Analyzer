@@ -20,7 +20,7 @@ Biocurve Analyzer can be used both locally and online. The app can be installed 
     In addition, these R packages should also be installed by from CRAN or GitHub using the code below.  
 
         ```
-        # enabling and customizing the app:
+        # enabling and customizing the app
         install.packages("shiny", "shinyjs", "shinyalert", "shinycssloaders", "shinyhelper")
         
         # data input and preprocessing
