@@ -1,4 +1,4 @@
-# Biocurve Analyzer  <img src="www/biocurve_analyzer_logo.png" align="right" style="height:200px;"/>
+# Biocurve Analyzer  <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:200px; margin: 10px;"/>
 
 A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological curves.  
 
