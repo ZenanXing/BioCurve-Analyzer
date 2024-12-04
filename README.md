@@ -72,7 +72,7 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
 *[ZenanX, xxxxxxxx]*  
 
 - **Generate the curves:**  
-*[Ritz C, Baty F, Streibig JC, Gerhard D](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0146021). Dose-Response Analysis Using R. PLoS One. 2015;10:e0146021.*  
+*Ritz C, Baty F, Streibig JC, Gerhard D. [Dose-Response Analysis Using R](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0146021). PLoS One. 2015;10:e0146021.*  
 
 - **ED<sub>50</sub> estimation:**  
   - **Reed-and-Muench Method:**  
