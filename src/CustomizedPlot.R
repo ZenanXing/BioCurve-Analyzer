@@ -37,11 +37,10 @@ output$tab4_side <- renderUI({
     list(
       # Label
       checkboxInput(inputId = "label_ck",
-                    label = tags$b("Label"),
+                    label = "Label",
                     value = FALSE),
       conditionalPanel(condition = "input.label_ck == 1",
-                       wellPanel(style = "background-color: #eaeaea;",
-                                 # Title
+                       wellPanel(# Title
                                  textInput(inputId = "plot_title", label = "Plot title:",
                                            value = ""),
                                  div(style = "margin-top: -10px"),
@@ -60,12 +59,12 @@ output$tab4_side <- renderUI({
       if (data_values$n_var != 0) {
         tagList(
           list(
+            div(style = "margin-top: 20px"),
             checkboxInput(inputId = "legend_ck",
-                          label = tags$b("Legend"),
+                          label = "Legend",
                           value = FALSE),
             conditionalPanel(condition = "input.legend_ck == 1",
-                             wellPanel(style = "background-color: #eaeaea;",
-                                       div(style = "vertical-align:top; width: 200px;",
+                             wellPanel(div(style = "vertical-align:top; width: 200px;",
                                            textInput(inputId = "legend_title", label = "Legend title:",
                                                      value = cus_plt_values$legnd_tt)),
                                        div(style = "margin-top: -10px"),
@@ -82,12 +81,12 @@ output$tab4_side <- renderUI({
       },
       
       # Font-related
+      div(style = "margin-top: 20px"),
       checkboxInput(inputId = "font_ck",
-                    label = tags$b("Font"),
+                    label = "Font",
                     value = FALSE),
       conditionalPanel(condition = "input.font_ck == 1",
-                       wellPanel(style = "background-color: #eaeaea;",
-                                 div(style = "vertical-align:top; width: 200px;",
+                       wellPanel(div(style = "vertical-align:top; width: 200px;",
                                      textInput(inputId = "font_size", label = "Base font size:",
                                                value = cus_plt_values$fontsize)),
                                  div(style = "margin-top: -10px"),
@@ -100,13 +99,13 @@ output$tab4_side <- renderUI({
                        )),
       
       # Line-related
+      div(style = "margin-top: 20px"),
       checkboxInput(inputId = "line_ck",
-                    label = tags$b("Line"),
+                    label = "Line",
                     value = FALSE),
       conditionalPanel(condition = "input.line_ck == 1",
-                       wellPanel(style = "background-color: #eaeaea;",
-                                 # Line color
-                                 p(tags$b("Please provide a comma-separated list of hex colors.")),
+                       wellPanel(# Line color
+                                 p("Please provide a comma-separated list of hex colors."),
                                  textInput(inputId = "palette_provd", label = NULL,
                                            value = cus_plt_values$palette)
                        )
@@ -173,7 +172,7 @@ output$dl_2 <- renderUI({
   req(input$plot_Butn_1)
   tagList(
     list(
-      h4("Download"),
+      h5("Download"),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
@@ -209,7 +208,7 @@ output$dl_2 <- renderUI({
       div(style = "margin-top: 10px"),
       tags$b("Note:"),
       p("1. You can only show up to 10 different dose-response-curves in the plots, and please try to avoid ", 
-        tags$b(a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph")), "."),  
+        a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph"), "."),  
       div(style = "margin-top: -10px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
       div(style = "margin-top: -10px"),

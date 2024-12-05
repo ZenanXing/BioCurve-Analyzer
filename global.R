@@ -259,10 +259,10 @@ compute_ed_SG <- function(df, fct, bp, minidose, ed50_type){
     tempED <- compute_ed(opt_mod = tempObj, rl = 1.349, dataframe = df, 
                          constantVar = TRUE, interval_type = "delta", conf_interval = 0.95, bp = bp, minidose, ed50_type)
   }else{
-    tempED <- matrix(NA, 1, 16) %>% as.data.frame()
+    tempED <- matrix(NA, 1, 12) %>% as.data.frame()
   }
-  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "SG_max_res", "SG_min_res", 
-                        "SG_ED50_res", "SG_ED50_l", "SG_ED50L_l", "SG_ED50U_l", "SG_ED50_r", "SG_ED50L_r", "SG_ED50U_r")
+  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "SG_max_res", "SG_min_res", "SG_ED50_res", 
+                        "SG_ED50_l", "SG_ED50L_l", "SG_ED50U_l", "SG_ED50_r", "SG_ED50L_r", "SG_ED50U_r")
   return(tempED)
   
 }
@@ -435,9 +435,8 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
     tempED <- as.data.frame(bmd_val)
     
   } else {
-    tempED <- matrix(NA, 1, 13) %>% as.data.frame()
-    colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", 
-                          "RG_ED50_res", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50L", "RG_ED50U")
+    tempED <- matrix(NA, 1, 8) %>% as.data.frame()
+    colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "Std_ED50_res", "Std_ED50_Mean", "Std_ED50_SE", "Std_ED50L", "Std_ED50U" )
   }
   return(tempED)
 }
@@ -467,10 +466,10 @@ loess_fit_drc <- function(df, bp, minidose) {
     temp_Ret <- predict(tempObj, newdata = data.frame(Conc = as.vector(doseRange)),
                         interval = TRUE, level = 0.95) %>% as.data.frame() %>% 
       mutate(Conc = doseRange) %>% drop_na()
-    colnames(temp_Ret) <- c("Prediction", "Conc") 
   } else {
-    temp_Ret <- NULL
+    temp_Ret <- matrix(NA, 1, 2) %>% as.data.frame()
   }
+  colnames(temp_Ret) <- c("Prediction", "Conc") 
   return(temp_Ret)
 }
 
@@ -621,11 +620,11 @@ loess_fit_te <- function(df) {
     timeRange <- seq_log(min(df_temp$After), max(df_temp$After), length.out = 500)
     temp_Ret <- predict(tempObj, newdata = data.frame(After = as.vector(timeRange)),
                         interval = TRUE, level = 0.95) %>% as.data.frame() %>% 
-      mutate(time = timeRange) %>% drop_na()
-    colnames(temp_Ret) <- c("Prediction", "time")
+      mutate(time = timeRange) %>% drop_na()  
   } else {
-    temp_Ret <- NULL
+    temp_Ret <- matrix(NA, 1, 2) %>% as.data.frame()
   }
+  colnames(temp_Ret) <- c("Prediction", "time")
   return(temp_Ret)
 }
 

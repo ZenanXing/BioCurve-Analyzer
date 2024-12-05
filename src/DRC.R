@@ -84,7 +84,7 @@ observe({
 observeEvent(input$upldData_Butn_drc, {
   if (data_values$n_var < 0) {
     shinyalert(title = "Attention", 
-               text = h4(tags$b("It seems the data you uploaded doesn't have the nessary columns, please upload the data in the correct format.")), 
+               text = h5("It seems the data you uploaded doesn't have the nessary columns, please upload the data in the correct format."), 
                type = "error",
                html = TRUE)
   }
@@ -222,29 +222,29 @@ df_ed <- eventReactive(input$calculate_Butn, {
   fctList_monotnc <- NULL
   ### Log-logistic models (4 parms)
   if (input$LL4) {
-    if(input$LL4_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$LL4_c}
-    if(input$LL4_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$LL4_d}
+    if(is.na(as.numeric(input$LL4_c))) {c <- c("0", "NA")} else {c <- input$LL4_c}
+    if(is.na(as.numeric(input$LL4_d))) {d <- c("1", "NA")} else {d <- input$LL4_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("LL.4", c_d$c, c_d$d, sep = "_"))
   }
   ### Log-logistic models (5 parms)
   if (input$LL5) {
-    if(input$LL5_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$LL5_c}
-    if(input$LL5_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$LL4_d}
+    if(is.na(as.numeric(input$LL5_c))) {c <- c("0", "NA")} else {c <- input$LL5_c}
+    if(is.na(as.numeric(input$LL5_d))) {d <- c("1", "NA")} else {d <- input$LL4_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("LL.5", c_d$c, c_d$d, sep = "_"))
   }
   ### Weibull I models
   if (input$W1) {
-    if(input$W1_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$W1_c}
-    if(input$W1_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$W1_d}
+    if(is.na(as.numeric(input$W1_c))) {c <- c("0", "NA")} else {c <- input$W1_c}
+    if(is.na(as.numeric(input$W1_d))) {d <- c("1", "NA")} else {d <- input$W1_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("W1.4", c_d$c, c_d$d, sep = "_"))
   }
   ### Weibull II models
   if (input$W2) {
-    if(input$W2_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$W2_c}
-    if(input$W2_d == "Not Fixed") {d <- c("1", "NA")} else {d <- input$W2_d}
+    if(is.na(as.numeric(input$W2_c))) {c <- c("0", "NA")} else {c <- input$W2_c}
+    if(is.na(as.numeric(input$W2_d))) {d <- c("1", "NA")} else {d <- input$W2_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("W2.4", c_d$c, c_d$d, sep = "_"))
   }
@@ -254,8 +254,8 @@ df_ed <- eventReactive(input$calculate_Butn, {
   if (any(data_scat()$Biphasic == "Y")) {
     ### Brain-Cousens models
     if (input$BC) {
-      if(input$BC_c == "Not Fixed") {c <- c("0", "NA")} else {c <- input$BC_c}
-      if(input$BC_d == "Not Fixed") {d <- c("NA")} else {d <- input$BC_d}
+      if(is.na(as.numeric(input$BC_c))) {c <- c("0", "NA")} else {c <- input$BC_c}
+      if(is.na(as.numeric(input$BC_d))) {d <- c("NA")} else {d <- input$BC_d}
       c_d <- expand.grid(c = c, d = d)
       fctList_biphsc <- c(fctList_biphsc, paste("BC.5", c_d$c, c_d$d, sep = "_"))
     }
@@ -385,12 +385,12 @@ df_ed_exp <- reactive({
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
   if (ed_methods == 'serra_greco_method') {
     if (any(c("Brain-Cousens", "beta") %in% df_ed()$Model)) {
-      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+33)) 
+      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24), (n_var+27):(n_var+33)) 
       colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
-                 "Monotonicity", "SG_Response_at_ED50", "SG_Low_ED50_Mean", "SG_Low_ED50_SE", "SG_Low_ED50_LowerBound", "SG_Low_ED50_UpperBound", 
-                 "SG_High_ED50_Mean", "SG_High_ED50_SE", "SG_High_ED50_LowerBound", "SG_High_ED50_UpperBound")
+                 "Monotonicity", "SG_Response_at_ED50", "SG_Low_ED50_Mean", "SG_Low_ED50_LowerBound", "SG_Low_ED50_UpperBound", 
+                 "SG_High_ED50_Mean", "SG_High_ED50_LowerBound", "SG_High_ED50_UpperBound")
     } else {
-      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+30))
+      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24), (n_var+27):(n_var+30))
       colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
                  "Monotonicity", "SG_Response_at_ED50", "SG_ED50_Mean", "SG_ED50_SE", "SG_ED50_LowerBound", "SG_ED50_UpperBound")
     }
@@ -509,14 +509,14 @@ output$biphasicmodels <- renderUI({
   req(data_scat())
   if (any(data_scat()$Biphasic == "Y")) {
     wellPanel(
-      tags$span("- Biphasic Curves", style = "font-size: 16px; font-weight: bold;") %>% 
+      tags$span("- Biphasic Curves") %>% 
         helper(icon = "question-circle", 
                type = "markdown",
                content = "Biphasic",
                buttonLabel = "Close"),
       div(style = "margin-top: 10px"), 
       fluidRow(
-        div(style = "text-align: center; font-weight: bold;", 
+        div(style = "text-align: center; display:flex;align-items:center;", 
             column(6, ""),
             column(3, "Lower"),
             column(3, "Upper")
@@ -543,19 +543,21 @@ output$ed50_results <- renderUI({
   req(df_ed())
   tagList(
     list(
-      h4(HTML(paste0("ED", tags$sub("50"), " Estimation Table")), style = "font-weight: bold;"),
+      h5(HTML(paste0("ED", tags$sub("50"), " Estimation Table")), align = 'center'),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
       DT::dataTableOutput("tb_ed") %>% shinycssloaders::withSpinner(),
       conditionalPanel(condition = "input.ed50_type == 'Absolute' && input.two_point_method == true",
-                       h4(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-and-Muench Method")), style = "font-weight: bold;"),
+                       div(style = "margin-top: 20px"),
+                       h5(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-and-Muench Method")), align = 'center'),
                        div(style = "margin-top: -10px"),
                        hr(),
                        div(style = "margin-top: -10px"),
                        DT::dataTableOutput("tb_ed_rm") %>% shinycssloaders::withSpinner(),
       ),
-      h4("Model Assessment Results", style = "font-weight: bold;"),
+      div(style = "margin-top: 20px"),
+      h5("Model Assessment Results", align = 'center'),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
@@ -586,9 +588,9 @@ output$ed50_results <- renderUI({
 observeEvent(input$tabs1, {
   req(df_ed())
   # Show a message if some of curves cannot be fitted to any of the models
-  if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_ed()$FctName)) & input$datatype == 'drc') {
+  if (input$tabs1 == "Step 3: Generate plot" & any(df_ed()$FctName=="/") & input$datatype == 'drc') {
     shinyalert(title = "Attention", 
-               text = h4(tags$b("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting.")), 
+               text = h5("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting."), 
                type = "warning",
                html = TRUE)
   }
@@ -597,9 +599,8 @@ observeEvent(input$tabs1, {
 #### Plot_model_UI ---------------------------------------------------------------------------------------
 output$plot_model_ui <- renderUI({
   req(df_ed())
-  if (any(is.na(df_ed()$FctName)) & input$datatype == 'drc') {
-    wellPanel(style = "background-color: #eaeaea;",
-              h4("Models"),
+  if (any(df_ed()$FctName=="/") & input$datatype == 'drc') {
+    wellPanel(h5("Models"),
               p(HTML(paste0("The ED", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
                             "Please choose the appropriate model to plot them."))),
               selectInput(inputId = "model_selected",
@@ -618,8 +619,7 @@ output$plot_layout_ui <- renderUI({
   req(data())
   req(data_values$n_var >= 0)
   if(data_values$n_var != 0) {
-    wellPanel(style = "background-color: #eaeaea;",
-              h4(tags$b("Layout")),
+    wellPanel(h5("Layout"),
               selectInput(inputId = "line_color_v",
                           label = "Set line colors according to:",
                           choices = colnames(data())[1:data_values$n_var],
@@ -642,8 +642,7 @@ observeEvent(input$line_color_v, {
 
 #### Plot_appearance_ui ---------------------------------------------------------------------------------------
 output$plot_appearance_ui <- renderUI({
-  wellPanel(style = "background-color: #eaeaea;",
-            h4(tags$b("Appearance")),
+  wellPanel(h5("Appearance"),
             div(style = "margin-top: -20px"),
             selectInput(inputId = "plot_appearance",
                         label = "",
@@ -655,9 +654,7 @@ output$plot_appearance_ui <- renderUI({
 
 #### Plot_ED&Responses_Line_UI -----------------------------------------------------------------------------
 output$plot_resline_ui <- renderUI({
-  wellPanel(style = "background-color: #eaeaea;",
-            h5(tags$b("Show the ED values and the corresponding responses：")),
-            div(style = "margin-top: -20px"),
+  wellPanel(h6("Show the ED values and the corresponding responses："),
             div(style = "display: inline-block; vertical-align: top;",
                 checkboxInput(inputId = "plot_ed50_ck", label = HTML(paste0("ED", tags$sub("50"))), value = FALSE))#,
             #div(style = "display: inline-block; vertical-align: top;",
@@ -672,7 +669,7 @@ output$dl <- renderUI({
   req(input$plot_Butn_1)
   tagList(
     list(
-      h4("Download"),
+      h5("Download"),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
@@ -708,7 +705,7 @@ output$dl <- renderUI({
       div(style = "margin-top: 10px"),
       tags$b("Note:"),
       p("1. You can only show up to 10 different dose-response-curves in the plots, and please try to avoid ", 
-        tags$b(a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph")), "."),  
+        a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph"), "."),  
       div(style = "margin-top: -10px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
       div(style = "margin-top: -10px"),
@@ -725,31 +722,27 @@ output$dl <- renderUI({
 data_predct <- eventReactive(input$plot_Butn_1, {
   req(df_ed())
   n_var <- isolate({data_values$n_var})
-  if (n_var == 0) {
-    data_predct <- df_ed() %>% filter(!is.na(FctName)) %>% 
-      dplyr::select("Curve_BestFit_data") %>% 
-      unnest() %>% dplyr::select(1:2)
-    colnames(data_predct)[1] <- c("Response")
-  } else {
-    data_predct <- df_ed() %>% filter(!is.na(FctName)) %>% 
-      dplyr::select(1:n_var, "Curve_BestFit_data") %>% 
-      unnest() %>% dplyr::select(1:(n_var+2))
-    colnames(data_predct)[(n_var+1)] <- c("Response")
-  }
   
-  if (any(is.na(df_ed()$FctName))) {
-    data_predct_na <- df_ed() %>% filter(is.na(FctName))
+  data_predct <- df_ed() %>% filter(FctName != "/")
+  if (n_var == 0) {
+    data_predct <- data_predct %>% dplyr::select("Curve_BestFit_data")
+  } else {
+    data_predct <- data_predct %>% dplyr::select(1:n_var, "Curve_BestFit_data")
+  }
+  data_predct <- data_predct %>% unnest() %>% dplyr::select(1:(n_var+2))
+  colnames(data_predct)[(n_var+1)] <- c("Response")
+  
+  if (any(df_ed()$FctName=="/")) {
+    data_predct_na <- df_ed() %>% filter(FctName == "/")
     if (input$model_selected == "loess") {
       if (n_var == 0) {
         data_predct_na <- data_predct_na %>% 
           dplyr::select("Curve_Loess_data") %>% 
           unnest()
-        colnames(data_predct_na)[1] <- c("Response")
       } else {
         data_predct_na <- data_predct_na %>% 
           dplyr::select(1:n_var, "Curve_Loess_data") %>% 
           unnest()
-        colnames(data_predct_na)[(n_var+1)] <- c("Response")
       }
     }
     if (input$model_selected == "line") {
@@ -757,14 +750,13 @@ data_predct <- eventReactive(input$plot_Butn_1, {
         data_predct_na <- data_predct_na %>% 
           dplyr::select("MeanData") %>% 
           unnest() %>% dplyr::select(2,1)
-        colnames(data_predct_na)[2] <- c("Response")
       } else {
         data_predct_na <- data_predct_na %>% 
           dplyr::select(1:n_var, "MeanData") %>% 
           unnest() %>% dplyr::select(1:n_var, (n_var+2), (n_var+1))
-        colnames(data_predct_na)[(n_var+1)] <- c("Response")
       }
     }
+    colnames(data_predct_na)[(n_var+1)] <- c("Response")
     data_predct <- rbind(data_predct, data_predct_na)
   }
   return(data_predct)

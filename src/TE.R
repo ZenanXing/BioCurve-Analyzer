@@ -305,7 +305,6 @@ df_et <- eventReactive(input$calculate_Butn_te, {
   # combine all the information
   if (n_var == 0) {
     df_et <- data_m_te() %>% nest() %>% cbind(loess_te, model_te)
-    colnames(df_et)[1] <- "MeanData"
   } else {
     df_et <- data_m_te() %>% 
       group_by(across(1:n_var)) %>% nest() %>% 
@@ -313,9 +312,13 @@ df_et <- eventReactive(input$calculate_Butn_te, {
       left_join(loess_te, by = "colComb") %>% 
       left_join(model_te, by ="colComb") %>% 
       separate(colComb, into = colnames(data_m_te())[1:n_var], sep = "_")
-    colnames(df_et)[n_var+1] <- "MeanData"
   }
-  
+  df_et <- df_et %>%
+    mutate(across(where(~ !is.list(.x)), ~ {
+      replaced <- if (is.logical(.x) || is.numeric(.x)) as.character(.x) else .x
+      replace_na(replaced, "/")
+    }))
+  colnames(df_et)[n_var+1] <- "MeanData"
   return(df_et)
 })
 
@@ -346,7 +349,7 @@ output$et50_results <- renderUI({
   req(df_et())
   tagList(
     list(
-      h4(HTML(paste0("T", tags$sub("50"), " Estimation Table")), align = 'center'),
+      h5(HTML(paste0("T", tags$sub("50"), " Estimation Table")), align = 'center'),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
@@ -371,9 +374,9 @@ output$et50_results <- renderUI({
 observeEvent(input$tabs1, {
   req(df_et())
   # Show a message if some of curves cannot be fitted to any of the models
-  if (input$tabs1 == "Step 3: Generate plot" & any(is.na(df_et()$FctName)) & input$datatype == 'te') {
+  if (input$tabs1 == "Step 3: Generate plot" & any(df_et()$FctName=="/") & input$datatype == 'te') {
     shinyalert(title = "Attention", 
-               text = h4(tags$b("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting.")), 
+               text = h5("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting."), 
                type = "warning",
                html = TRUE)
   }
@@ -382,9 +385,9 @@ observeEvent(input$tabs1, {
 #### Plot_model_UI ---------------------------------------------------------------------------------------
 output$plot_model_ui_te <- renderUI({
   req(df_et())
-  if (any(is.na(df_et()$FctName)) & input$datatype == 'te') {
+  if (any(df_et()$FctName=="/") & input$datatype == 'te') {
     wellPanel(style = "background-color: #eaeaea;",
-              h4("Models"),
+              h5("Models"),
               p(HTML(paste0("The T", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
                             "Please choose the appropriate model to plot them."))),
               selectInput(inputId = "model_selected_te",
@@ -401,8 +404,7 @@ output$plot_layout_ui_te <- renderUI({
   req(data_te())
   req(data_values_te$n_var >= 0)
   if(data_values_te$n_var != 0) {
-    wellPanel(style = "background-color: #eaeaea;",
-              h4("Layout"),
+    wellPanel(h5("Layout"),
               selectInput(inputId = "line_color_v_te",
                           label = "Set line colors according to:",
                           choices = colnames(data_te())[1:data_values_te$n_var],
@@ -425,15 +427,12 @@ observeEvent(input$line_color_v_te, {
 
 #### Plot_ED&Responses_Line_UI -----------------------------------------------------------------------------
 output$plot_resline_ui_te <- renderUI({
-  tagList(
-    list(
-      h5(HTML(paste0("Show the T", tags$sub("50"), " values："))),
-      div(style = "margin-top: -20px"),
-      div(style = "display: inline-block; vertical-align: top;",
-          checkboxInput(inputId = "plot_ed50_ck_te", label = HTML(paste0("T", tags$sub("50"))), value = FALSE))#,
-      #div(style = "display: inline-block; vertical-align: top;",
-      #    checkboxInput(inputId = "plot_resline_ck_te", label = "Max & Min Responses", value = FALSE))
-    )
+  wellPanel(
+    h6(HTML(paste0("Show the T", tags$sub("50"), " values："))),
+    div(style = "display: inline-block; vertical-align: top;",
+        checkboxInput(inputId = "plot_ed50_ck_te", label = HTML(paste0("T", tags$sub("50"))), value = FALSE))#,
+    #div(style = "display: inline-block; vertical-align: top;",
+    #    checkboxInput(inputId = "plot_resline_ck_te", label = "Max & Min Responses", value = FALSE))
   )
 })
 
@@ -443,7 +442,7 @@ output$dl_te <- renderUI({
   req(input$plot_Butn_1_te)
   tagList(
     list(
-      h4("Download"),
+      h5("Download"),
       div(style = "margin-top: -10px"),
       hr(),
       div(style = "margin-top: -10px"),
@@ -479,7 +478,7 @@ output$dl_te <- renderUI({
       div(style = "margin-top: 10px"),
       tags$b("Note:"),
       p("1. You can only show up to 10 different time-to-event-curves in the plots, and please try to avoid ", 
-        tags$b(a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph")), "."),  
+        a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph"), "."),  
       div(style = "margin-top: -10px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
       div(style = "margin-top: -10px"),
@@ -494,32 +493,27 @@ output$dl_te <- renderUI({
 
 #### Lineplot_dataset --------------------------------------------------------------------------------------
 data_predct_te <- eventReactive(input$plot_Butn_1_te, {
-  n_var <-  ncol(df_et())-8
+  n_var <- ncol(df_et())-8
+  data_predct_te <- df_et() %>% filter(FctName != "/")
   if (n_var == 0) {
-    data_predct_te <- df_et() %>% drop_na() %>% 
-      dplyr::select("Curve_BestFit_data") %>% 
-      unnest() %>% dplyr::select(1:2)
-    colnames(data_predct_te)[1:2] <- c("After", "Response")
+    data_predct_te <- data_predct_te %>% dplyr::select("Curve_BestFit_data")
   } else {
-    data_predct_te <- df_et() %>% drop_na() %>% 
-      dplyr::select(1:n_var, "Curve_BestFit_data") %>% 
-      unnest() %>% dplyr::select(1:(n_var+2))
-    colnames(data_predct_te)[(n_var+1):(n_var+2)] <- c("After", "Response")
+    data_predct_te <- data_predct_te %>% dplyr::select(1:n_var, "Curve_BestFit_data")
   }
+  data_predct_te <- data_predct_te %>% unnest() %>% dplyr::select(1:(n_var+2))
+  colnames(data_predct_te)[(n_var+1):(n_var+2)] <- c("After", "Response")
   
-  if (any(is.na(df_et()$FctName))) {
-    data_predct_te_na <- df_et() %>% filter(is.na(FctName))
+  if (any(df_et()$FctName=="/")) {
+    data_predct_te_na <- df_et() %>% filter(FctName == "/")
     if (input$model_selected_te == "loess") {
       if (n_var == 0) {
         data_predct_te_na <- data_predct_te_na %>% 
           dplyr::select("Curve_Loess_data") %>% 
           unnest() %>% dplyr::select(2,1)
-        colnames(data_predct_te_na)[1:2] <- c("After", "Response")
       } else {
         data_predct_te_na <- data_predct_te_na %>% 
           dplyr::select(1:n_var, "Curve_Loess_data") %>% 
           unnest() %>% dplyr::select(1:n_var, (n_var+2), (n_var+1))
-        colnames(data_predct_te_na)[(n_var+1):(n_var+2)] <- c("After", "Response")
       }
     }
     if (input$model_selected_te == "line") {
@@ -527,14 +521,14 @@ data_predct_te <- eventReactive(input$plot_Butn_1_te, {
         data_predct_te_na <- data_predct_te_na %>% 
           dplyr::select("MeanData") %>% 
           unnest()
-        colnames(data_predct_te_na)[1:2] <- c("After", "Response")
       } else {
         data_predct_te_na <- data_predct_te_na %>% 
           dplyr::select(1:n_var, "MeanData") %>% 
           unnest()
-        colnames(data_predct_te_na)[(n_var+1):(n_var+2)] <- c("After", "Response")
       }
+      
     }
+    colnames(data_predct_te_na)[(n_var+1):(n_var+2)] <- c("After", "Response")
     data_predct_te <- rbind(data_predct_te, data_predct_te_na)
   }
   
@@ -625,8 +619,8 @@ L_P_te <- reactive({
     anno_df <- df_et() %>% dplyr::select(1:n_var, (n_var+6):(n_var+8)) %>% 
       mutate(T50_res = 0.5, max_res = 1, min_res = 0)
   }
-  
-  # ED50
+  anno_df[, (n_var + 1):ncol(anno_df)] <- lapply(anno_df[, (n_var + 1):ncol(anno_df)], as.numeric)
+  # T50
   if (input$plot_ed50_ck_te == TRUE) {
     if (n_var == 0 ) {
       p <- p +
@@ -657,8 +651,6 @@ L_P_te <- reactive({
   p
   
 })
-
-#### Show the EDs and related responses --------------------------------------------------------------------
 
 
 

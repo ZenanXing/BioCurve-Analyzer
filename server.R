@@ -1,6 +1,6 @@
 # Define server for application
 
-server <- function(input, output, session) {
+function(input, output, session) {
   
   # uses 'helpfiles' directory by default
   # in this example, we use the withMathJax parameter to render formula

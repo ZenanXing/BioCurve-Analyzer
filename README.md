@@ -21,7 +21,7 @@ To use Biocurve Analyzer locally, you can follow the steps.
 
       ```
       # enabling and customizing the app
-      install.packages("shiny", "shinyjs", "shinyalert", "shinycssloaders", "shinyhelper")
+      install.packages("shiny", "shinyjs", "shinyalert", "shinycssloaders", "shinyhelper", "bslib")
       
       # data input and preprocessing
       install.packages("tidyverse", "purrr", "broom", "bigsnpr", "openxlsx")
