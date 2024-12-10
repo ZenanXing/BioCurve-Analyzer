@@ -1,6 +1,5 @@
 
 # Load the required packages ########################################
-
 library(shiny)
 library(shinyjs)
 library(shinyalert)
@@ -27,8 +26,10 @@ library(knitr)
 library(DT)
 library(kableExtra)
 library(rlist)
+library(bslib) # theme
 
-library(bslib)# theme
+library(grateful) # citations
+#cite_packages(output = "file", out.dir = "./", out.format = "docx", cite.tidyverse = FALSE, pkgs = "All")
 
 # Define UI for application
 navbarPage(
@@ -44,21 +45,33 @@ navbarPage(
         h5("Main functions of the app:"),
         hr(),
         p("1. Analyze both the dose-response data and the time-to-event data."),
+        div(style = "margin-top: -15px"), 
         p("2. Most popular models used to describe the data are provided as candidates, and it also helps to select the best model."),
+        div(style = "margin-top: -15px"), 
         p(HTML(paste0("3. Calculate the ED", tags$sub("50"), "/ T", tags$sub("50"), " values from the curves with diverse patterns."))),
+        div(style = "margin-top: -15px"), 
         p("4. Generate dose-response or time-to-event curves with customized appearance."),
+        div(style = "margin-top: -15px"), 
         p("5. All the dataframes, figures, and a report can be downloaded."),
         br(),
         h5("References:"),
         hr(),
         p(em("Wickham H (2014) Tidy Data. Journal of Statistical Software, Articles 59: 1–23")),
+        div(style = "margin-top: -15px"), 
         p(em("Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One. 10(12)")),
+        div(style = "margin-top: -15px"), 
         p(em("Reed LJ, Muench H (1938) A simple method of estimating fifty percent endpoints. Am J Epidemiol 27: 493–497")),
+        div(style = "margin-top: -15px"), 
         p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86")),
+        div(style = "margin-top: -15px"), 
         p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
+        div(style = "margin-top: -15px"), 
         p(em("Ritz C, Pipper CB, Streibig JC (2013) Analysis of germination data from agricultural experiments. Eur J Agron 45: 1–6")),
+        div(style = "margin-top: -15px"), 
         p(em("Onofri A, Mesgaran MB, Ritz C (2022) A unified framework for the analysis of germination, emergence, and other time-to-event data in weed science. Weed Sci 70: 259–271")),
+        div(style = "margin-top: -15px"), 
         p(em("Vaidya, A.S. et al. (2019) Dynamic control of plant water use using designed ABA receptor agonists. Science, 366(6464)")),
+        div(style = "margin-top: -15px"), 
         p(em("Eckhardt J, et al. (2024) Robotic Imaging and Machine Learning Analysis of Seed Germination: Dissecting the Influence of ABA and DOG1 on Germination Uniformity. Plant Biology"))
     )
   ),
@@ -333,6 +346,23 @@ navbarPage(
                                               
                                     ),
                                     
+                                    # Select the criterion
+                                    div(style = "margin-top: 10px"), 
+                                    wellPanel(h5("Criteria for model selection:") %>% 
+                                                helper(icon = "question-circle", 
+                                                       type = "markdown",
+                                                       content = "Model_Selection_Criteria",
+                                                       buttonLabel = "Close"),
+                                              div(style = "margin-top: -20px"), 
+                                              selectInput(inputId = "crtrn_selected",
+                                                          label = "",
+                                                          choices = c("Akaike's Information Criterion" = "AIC", 
+                                                                      "Bayesian Information Criteria" = "BIC", 
+                                                                      "Lack-of-fit Test (against a one-way ANOVA model)" = "Lack_of_fit", 
+                                                                      "Residual Standard Errors" = "Res_var"),
+                                                          selected = "AIC")
+                                    ),
+                                    
                                     # Select the methods
                                     div(style = "margin-top: 10px;"), 
                                     wellPanel(h5(HTML(paste0("Methods & Type of ED", tags$sub("50"), ":"))) %>% 
@@ -406,23 +436,6 @@ navbarPage(
                                                     column(4, textInput("para0_p", NULL, "0.05"))
                                                 )
                                               )
-                                    ),
-                                    
-                                    # Select the criterion
-                                    div(style = "margin-top: 10px"), 
-                                    wellPanel(h5("Criteria for model selection:") %>% 
-                                                helper(icon = "question-circle", 
-                                                       type = "markdown",
-                                                       content = "Model_Selection_Criteria",
-                                                       buttonLabel = "Close"),
-                                              div(style = "margin-top: -20px"), 
-                                              selectInput(inputId = "crtrn_selected",
-                                                          label = "",
-                                                          choices = c("Akaike's Information Criterion" = "AIC", 
-                                                                      "Bayesian Information Criteria" = "BIC", 
-                                                                      "Lack-of-fit Test (against a one-way ANOVA model)" = "Lack_of_fit", 
-                                                                      "Residual Standard Errors" = "Res_var"),
-                                                          selected = "AIC")
                                     ),
                                     
                                     # Minimum Dose
@@ -532,9 +545,9 @@ navbarPage(
                                     div(style = "margin-top: 10px;"), 
                                     uiOutput(outputId = "plot_appearance_ui"),
                                     div(style = "margin-top: 10px;"), 
-                                    uiOutput(outputId = "plot_model_ui"),
-                                    div(style = "margin-top: 10px;"), 
                                     uiOutput(outputId = "plot_resline_ui"),
+                                    div(style = "margin-top: 10px;"), 
+                                    uiOutput(outputId = "plot_model_ui"),
                                     
                                     # Confirm to plot
                                     div(style = "text-align: right; margin-top: 10px;",
@@ -554,9 +567,9 @@ navbarPage(
                                     div(style = "margin-top: 10px;"), 
                                     uiOutput(outputId = "plot_appearance_ui_te"),
                                     div(style = "margin-top: 10px;"), 
-                                    uiOutput(outputId = "plot_model_ui_te"),
-                                    div(style = "margin-top: 10px;"), 
                                     uiOutput(outputId = "plot_resline_ui_te"),
+                                    div(style = "margin-top: 10px;"), 
+                                    uiOutput(outputId = "plot_model_ui_te"),
                                     
                                     # Confirm to plot
                                     div(style = "margin-top: 10px;"), 

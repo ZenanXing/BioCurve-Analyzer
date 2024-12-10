@@ -68,11 +68,11 @@ observe({
 
 #### Message box to remind users if the file doesn't contain the necessary columns -------------------------------------------------------
 observeEvent(input$upldData_Butn_te, {
-  #        req(data())
+  # req(data())
   # Show a message if some of ED50s cannot be estimated by log-logistic model
   if (data_values_te$n_var < 0) {
     shinyalert(title = "Attention", 
-               text = h4(tags$b("It seems the data you uploaded doesn't have the nessary columns, please upload the data in the correct format.")), 
+               text = h5("It seems the data you uploaded doesn't have the nessary columns, please upload the data in the correct format."), 
                type = "error",
                html = TRUE)
   }
@@ -316,7 +316,8 @@ df_et <- eventReactive(input$calculate_Butn_te, {
   df_et <- df_et %>%
     mutate(across(where(~ !is.list(.x)), ~ {
       replaced <- if (is.logical(.x) || is.numeric(.x)) as.character(.x) else .x
-      replace_na(replaced, "/")
+      replaced <- replace_na(replaced, "/") # Replace NA with "/"
+      ifelse(replaced == "NaN", "/", replaced) # Replace "NaN" with "/"
     }))
   colnames(df_et)[n_var+1] <- "MeanData"
   return(df_et)
@@ -376,7 +377,7 @@ observeEvent(input$tabs1, {
   # Show a message if some of curves cannot be fitted to any of the models
   if (input$tabs1 == "Step 3: Generate plot" & any(df_et()$FctName=="/") & input$datatype == 'te') {
     shinyalert(title = "Attention", 
-               text = h5("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting."), 
+               text = h5("Some data could not be fitted with the selected models. Please select one of the options on the left to determine how to plot these data."), 
                type = "warning",
                html = TRUE)
   }
@@ -386,14 +387,11 @@ observeEvent(input$tabs1, {
 output$plot_model_ui_te <- renderUI({
   req(df_et())
   if (any(df_et()$FctName=="/") & input$datatype == 'te') {
-    wellPanel(style = "background-color: #eaeaea;",
-              h5("Models"),
-              p(HTML(paste0("The T", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
-                            "Please choose the appropriate model to plot them."))),
+    wellPanel(p("Some data couldn't be fitted with the selected models. Please choose the way to plot them."),
               selectInput(inputId = "model_selected_te",
-                          label = "Select the models:",
+                          label = "Select the method:",
                           choices = c("Simple line plot" = "line",
-                                      "Loess model" = "loess"),
+                                      "Using Loess model" = "loess"),
                           selected = "line")
     )
   }
@@ -452,10 +450,10 @@ output$dl_te <- renderUI({
       div(style = "margin-top: -10px"),
       div(style = "display: inline-block; vertical-align:top; width: 100px;",
           textInput(inputId = "width_1_te", label = "Width", value = 8)),
-      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 20px;",HTML("<br>")), 
       div(style = "display: inline-block; vertical-align:top; width: 100px;",
           textInput(inputId = "height_1_te", label = "Height", value = 4)),
-      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 20px;",HTML("<br>")), 
       div(style = "display: inline-block; vertical-align:top; width: 150px;",
           selectInput(inputId = "file_type_1_te", 
                       label = "Select file type: ", 
@@ -479,9 +477,9 @@ output$dl_te <- renderUI({
       tags$b("Note:"),
       p("1. You can only show up to 10 different time-to-event-curves in the plots, and please try to avoid ", 
         a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph"), "."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p(HTML(paste0("3. The excel contains T", tags$sub("50"), 
                     " table, both dataframes for generating scatterplot and lineplot.")))
       
@@ -494,14 +492,6 @@ output$dl_te <- renderUI({
 #### Lineplot_dataset --------------------------------------------------------------------------------------
 data_predct_te <- eventReactive(input$plot_Butn_1_te, {
   n_var <- ncol(df_et())-8
-  data_predct_te <- df_et() %>% filter(FctName != "/")
-  if (n_var == 0) {
-    data_predct_te <- data_predct_te %>% dplyr::select("Curve_BestFit_data")
-  } else {
-    data_predct_te <- data_predct_te %>% dplyr::select(1:n_var, "Curve_BestFit_data")
-  }
-  data_predct_te <- data_predct_te %>% unnest() %>% dplyr::select(1:(n_var+2))
-  colnames(data_predct_te)[(n_var+1):(n_var+2)] <- c("After", "Response")
   
   if (any(df_et()$FctName=="/")) {
     data_predct_te_na <- df_et() %>% filter(FctName == "/")
@@ -529,10 +519,24 @@ data_predct_te <- eventReactive(input$plot_Butn_1_te, {
       
     }
     colnames(data_predct_te_na)[(n_var+1):(n_var+2)] <- c("After", "Response")
-    data_predct_te <- rbind(data_predct_te, data_predct_te_na)
   }
   
+  if (!all(df_et()$FctName == "/")) {
+    data_predct_te <- df_et() %>% filter(FctName != "/")
+    if (n_var == 0) {
+      data_predct_te <- data_predct_te %>% dplyr::select("Curve_BestFit_data")
+    } else {
+      data_predct_te <- data_predct_te %>% dplyr::select(1:n_var, "Curve_BestFit_data")
+    }
+    data_predct_te <- data_predct_te %>% unnest() %>% dplyr::select(1:(n_var+2))
+    colnames(data_predct_te)[(n_var+1):(n_var+2)] <- c("After", "Response")
+    if (is.null(data_predct_te_na)) {data_predct_te <- rbind(data_predct_te, data_predct_te_na)}
+    
+  } else {
+    data_predct_te <- data_predct_te_na
+  }
   return(data_predct_te)
+  
 })
 
 
@@ -540,7 +544,7 @@ data_predct_te <- eventReactive(input$plot_Butn_1_te, {
 
 L_P_te <- reactive({
   req(data_predct_te())
-  req(df_et())
+  req(data_te())
   n_var <- ncol(data_predct_te())-2
   
   # facet plot related

@@ -1,6 +1,6 @@
 ############################################################ Customized plot tab ##################################################################################################
 
-#### Show/Hide "Step 4" Tab -----------------------------------------------------------------------------------
+#### Show/Hide "Step 4" Tab --------------------------------------------------------------------------------------------
 observe({
   if (input$custmz_plot_ck == TRUE) {
     showTab(inputId = "tabs1", target = "Step 4: Customize plot")
@@ -9,7 +9,7 @@ observe({
   }
 })
 
-#### Create reactiveValues used in the plot ------------------------------------------------------------------------
+#### Create reactiveValues used in the plot ----------------------------------------------------------------------------
 # so that these values won't change until the data_predict dataframe changed and avoid errors if users accidentally select the step 4 Tab
 cus_plt_values <- reactiveValues()
 
@@ -209,9 +209,9 @@ output$dl_2 <- renderUI({
       tags$b("Note:"),
       p("1. You can only show up to 10 different dose-response-curves in the plots, and please try to avoid ", 
         a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph"), "."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p(HTML(paste0("2. The excel contains ED", tags$sub("50"), 
                     " table, both dataframes for generating scatterplot and lineplot.")))
       

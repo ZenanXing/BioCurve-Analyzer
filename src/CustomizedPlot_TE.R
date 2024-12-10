@@ -26,7 +26,6 @@ observe({
   
   # Line_color--reactiveValues
   cus_plt_values_te$palette <- paste0(unlist(unique(g$data[[1]]["colour"])), collapse = ", ")
-  
 })
 
 
@@ -108,8 +107,7 @@ output$tab4_side_te <- renderUI({
                                  p("Please provide a comma-separated list of hex colors."),
                                  textInput(inputId = "palette_provd_te", label = NULL,
                                            value = cus_plt_values_te$palette)
-                       )
-      )
+                       ))
     )
   )
 })
@@ -155,9 +153,7 @@ custmz_P_te <- reactive({
           legend.text = element_text(size = font_size),
           legend.title = element_text(size = font_size + 2),
           text = element_text(family = input$font_family_te))
-  
-  
-  
+
   p
   
 })
@@ -182,10 +178,10 @@ output$dl_2_te <- renderUI({
       div(style = "margin-top: -10px"),
       div(style = "display: inline-block; vertical-align:top; width: 100px;",
           textInput(inputId = "width_2_te", label = "Width", value = 8)),
-      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 20px;",HTML("<br>")), 
       div(style = "display: inline-block; vertical-align:top; width: 100px;",
           textInput(inputId = "height_2_te", label = "Height", value = 4)),
-      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 20px;",HTML("<br>")), 
       div(style = "display: inline-block; vertical-align:top; width: 150px;",
           selectInput(inputId = "file_type_2_te", 
                       label = "Select file type: ", 
@@ -196,10 +192,10 @@ output$dl_2_te <- renderUI({
       br(),
       div(style = "display: inline-block; vertical-align: top;",
           downloadButton(outputId = "dl_plot_2_te", label = "Download Plot")),
-      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 20px;",HTML("<br>")), 
       div(style = "display: inline-block; vertical-align: top;",
           downloadButton(outputId = "dl_plot_df_2_te", label = "Download Dataframe")),
-      div(style = "display: inline-block;vertical-align:top; width: 20px;",HTML("<br>")), 
+      div(style = "display: inline-block; vertical-align:top; width: 20px;",HTML("<br>")), 
       div(style = "display: inline-block; vertical-align: top;",
           downloadButton(outputId = "dl_report_2_te", label = "Download Report")),
       
@@ -209,9 +205,9 @@ output$dl_2_te <- renderUI({
       tags$b("Note:"),
       p("1. You can only show up to 10 different time-to-event-curves in the plots, and please try to avoid ", 
         a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph"), "."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p(HTML(paste0("2. The excel contains T", tags$sub("50"), 
                     " table, both dataframes for generating scatterplot and lineplot.")))
       

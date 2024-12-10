@@ -529,7 +529,12 @@ sig_test <- function(x, sign, p) {
 }
 
 para_sig_test <- function(df, p) {
-  sig <- ifelse(all(df$`p.value` < as.numeric(p)), "Significant", "Non-significant")
+  # df <- model_drc$Para_Info
+  if (is.null(df) || all(is.na(df))) {
+    sig <- "/"
+  } else {
+    sig <- ifelse(all(df$`p.value` < as.numeric(p)), "Significant", "Non-significant")
+  }
   return(sig)
 }
 

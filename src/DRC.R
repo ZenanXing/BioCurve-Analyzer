@@ -365,8 +365,10 @@ df_ed <- eventReactive(input$calculate_Butn, {
   df_ed <- df_ed %>%
     mutate(across(where(~ !is.list(.x)), ~ {
       replaced <- if (is.logical(.x) || is.numeric(.x)) as.character(.x) else .x
-      replace_na(replaced, "/")
+      replaced <- replace_na(replaced, "/") # Replace NA with "/"
+      ifelse(replaced == "NaN", "/", replaced) # Replace "NaN" with "/"
     }))
+  
   colnames(df_ed)[n_var+1] <- "MeanData"
   return(df_ed)
   
@@ -525,14 +527,16 @@ output$biphasicmodels <- renderUI({
       fluidRow(
         div(style = "display: flex; justify-content: center; align-items: center;", 
             column(6, div(style = "display:flex;align-items:center;", checkboxInput("BC", "Brain-Cousens", TRUE))),
-            column(3, textInput("BC_c", NULL, "Not Fixed")),
-            column(3, textInput("BC_d", NULL, "Not Fixed"))
+            column(3, style = "margin-right: 5px;", 
+                   textInput("BC_c", NULL, "Not Fixed")),
+            column(3, style = "margin-right: 5px;", 
+                   textInput("BC_d", NULL, "Not Fixed"))
         )
       ),
       fluidRow(
         div(style = "display: flex; justify-content: center; align-items: center;", 
             column(6, div(style = "display:flex;align-items:center;", checkboxInput("beta", "beta", TRUE))),
-            column(6)
+            column(6, style = "margin-right: 10px;")
         )
       )
     )
@@ -573,7 +577,9 @@ output$ed50_results <- renderUI({
                     em("et al."), ", ", em("PLoS One"), ", 2015), based on the criteria you choose on the left."))),
       p(tags$b("Reference:")),
       p(em("Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One. 10(12)")), 
+      div(style = "margin-top: -15px"), 
       p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
+      div(style = "margin-top: -15px"), 
       p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86"))
     )
   )
@@ -590,7 +596,7 @@ observeEvent(input$tabs1, {
   # Show a message if some of curves cannot be fitted to any of the models
   if (input$tabs1 == "Step 3: Generate plot" & any(df_ed()$FctName=="/") & input$datatype == 'drc') {
     shinyalert(title = "Attention", 
-               text = h5("Some data couldn't be fitted with the selected models. Please try choosing another model from the list on the left to proceed with plotting."), 
+               text = h5("Some data could not be fitted with the selected models. Please select one of the options on the left to determine how to plot these data."), 
                type = "warning",
                html = TRUE)
   }
@@ -600,13 +606,11 @@ observeEvent(input$tabs1, {
 output$plot_model_ui <- renderUI({
   req(df_ed())
   if (any(df_ed()$FctName=="/") & input$datatype == 'drc') {
-    wellPanel(h5("Models"),
-              p(HTML(paste0("The ED", tags$sub("50"), "s cannot be estimated by the selected models for some of your data, ",
-                            "Please choose the appropriate model to plot them."))),
+    wellPanel(p("Some data couldn't be fitted with the selected models. Please choose the way to plot them."),
               selectInput(inputId = "model_selected",
-                          label = "Select the models:",
+                          label = "Select the method:",
                           choices = c("Simple line plot" = "line",
-                                      "Loess model" = "loess"),
+                                      "Using Loess model" = "loess"),
                           selected = "line")
     )
   }
@@ -706,9 +710,9 @@ output$dl <- renderUI({
       tags$b("Note:"),
       p("1. You can only show up to 10 different dose-response-curves in the plots, and please try to avoid ", 
         a(href = "https://www.storytellingwithdata.com/blog/2013/03/avoiding-spaghetti-graph", "spaghetti graph"), "."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p("2. The default size is only suitable for two plots; you can specify the aspect ratio for downloading."),  
-      div(style = "margin-top: -10px"),
+      div(style = "margin-top: -15px"),
       p(HTML(paste0("3. The excel contains ED", tags$sub("50"), 
                     " table, both dataframes for generating scatterplot and lineplot.")))
       
@@ -722,15 +726,6 @@ output$dl <- renderUI({
 data_predct <- eventReactive(input$plot_Butn_1, {
   req(df_ed())
   n_var <- isolate({data_values$n_var})
-  
-  data_predct <- df_ed() %>% filter(FctName != "/")
-  if (n_var == 0) {
-    data_predct <- data_predct %>% dplyr::select("Curve_BestFit_data")
-  } else {
-    data_predct <- data_predct %>% dplyr::select(1:n_var, "Curve_BestFit_data")
-  }
-  data_predct <- data_predct %>% unnest() %>% dplyr::select(1:(n_var+2))
-  colnames(data_predct)[(n_var+1)] <- c("Response")
   
   if (any(df_ed()$FctName=="/")) {
     data_predct_na <- df_ed() %>% filter(FctName == "/")
@@ -757,8 +752,22 @@ data_predct <- eventReactive(input$plot_Butn_1, {
       }
     }
     colnames(data_predct_na)[(n_var+1)] <- c("Response")
-    data_predct <- rbind(data_predct, data_predct_na)
   }
+  
+  if (!all(df_ed()$FctName == "/")) {
+    data_predct <- df_ed() %>% filter(FctName != "/")
+    if (n_var == 0) {
+      data_predct <- data_predct %>% dplyr::select("Curve_BestFit_data")
+    } else {
+      data_predct <- data_predct %>% dplyr::select(1:n_var, "Curve_BestFit_data")
+    }
+    data_predct <- data_predct %>% unnest() %>% dplyr::select(1:(n_var+2))
+    colnames(data_predct)[(n_var+1)] <- c("Response")
+    if (is.null(data_predct_na)) {data_predct <- rbind(data_predct, data_predct_na)}
+  } else {
+    data_predct <- data_predct_na
+  }
+  
   return(data_predct)
   
 })
