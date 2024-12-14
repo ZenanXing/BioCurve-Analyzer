@@ -100,13 +100,13 @@ navbarPage(
                                        # Introduce the format of data
                                        p("The data should be in", tags$b(a(href = "https://r4ds.had.co.nz/tidy-data.html", "tidy format")),
                                          "with ", tags$b("column order"), " as the follows:"),
-                                       p(tags$span("Factors", style = "font-weight: bold; background-color: #c5c5c5"), 
-                                         " (if applicable, e.g. Protein, Compound, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name), ",
+                                       p(tags$span("Factors", style = "font-weight: bold; background-color: #c5c5c5"), ", ",
                                          tags$span("Biphasic", style = "font-weight: bold; background-color: #c5c5c5"), ", ",
                                          tags$span("Concentration", style = "font-weight: bold; background-color: #c5c5c5"), ", ",
                                          tags$span("Replicate", style = "font-weight: bold; background-color: #c5c5c5"), ", ",
                                          tags$span("Response", style = "font-weight: bold; background-color: #c5c5c5"), "."  
                                        ),
+                                       p("Note: Add the 'Factors' column if applicable, e.g. Protein, Compound, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name)."),
                                        p(em("Click the question mark to see the detailed requirments")) %>% 
                                          helper(icon = "question-circle", 
                                                 type = "markdown",
@@ -175,14 +175,13 @@ navbarPage(
                                        # Introduce the format of data
                                        p("The data should be in", tags$b(a(href = "https://r4ds.had.co.nz/tidy-data.html", "tidy format")), 
                                          "with ", tags$b("column order"), " as the follows:"), 
-                                       p(tags$span("Factors", style = "font-weight: bold; background-color: #c5c5c5"), 
-                                         " (if applicable, e.g. Genotype, Treatment, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name), ", 
+                                       p(tags$span("Factors", style = "font-weight: bold; background-color: #c5c5c5"), ", ", 
                                          tags$span("Replicate", style = "font-weight: bold; background-color: #c5c5c5"), ", ", 
                                          tags$span("Before", style = "font-weight: bold; background-color: #c5c5c5"), ", ", 
                                          tags$span("After", style = "font-weight: bold; background-color: #c5c5c5"), ", ", 
                                          tags$span("Count", style = "font-weight: bold; background-color: #c5c5c5"), "."  
                                        ),
-                                       
+                                       p("Note: Add the 'Factors' column if applicable, e.g. Genotype, Treatment, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name."),
                                        p(em("Click the question mark to see the detailed requirments")) %>% 
                                          helper(icon = "question-circle", 
                                                 type = "markdown", 
