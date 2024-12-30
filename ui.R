@@ -118,7 +118,7 @@ navbarPage(
                                        selectInput(inputId = "input_select",
                                                    label = "",
                                                    choices = c("Load the sample data" = "smp",
-                                                               "Upload the file" = "upld",
+                                                               "Upload the Excel file" = "upld",
                                                                "Paste data" = "pst"),
                                                    selected = "smp"),
                                        
@@ -132,7 +132,7 @@ navbarPage(
                                        
                                        # Upload the excel file
                                        conditionalPanel(condition = "input.input_select == 'upld'", 
-                                                        tags$b(h6("Choose File :")), 
+                                                        tags$b(h6("Choose the Excel File:")), 
                                                         p(style = "text-align: right; margin-top: 10px;", tags$b("Note: "), "The first row is used as header."), 
                                                         div(style = "margin-top: -20px;"), 
                                                         fileInput(inputId = "file1", label = "")
@@ -192,7 +192,7 @@ navbarPage(
                                        selectInput(inputId = "input_select_te", 
                                                    label = "", 
                                                    choices = c("Load the sample data" = "smp", 
-                                                               "Upload the file" = "upld", 
+                                                               "Upload the Excel file" = "upld", 
                                                                "Paste data" = "pst"), 
                                                    selected = "smp"),
                                        
@@ -207,7 +207,7 @@ navbarPage(
                                        
                                        # Upload the excel file
                                        conditionalPanel(condition = "input.input_select_te == 'upld'",
-                                                        tags$b(h6("Choose File :")),
+                                                        tags$b(h6("Choose the Excel File:")),
                                                         p(style = "text-align: right; margin-top: 10px;", tags$b("Note: "), "The first row is used as header."),
                                                         div(style = "margin-top: -20px;"), 
                                                         fileInput(inputId = "file1_te", label = "")

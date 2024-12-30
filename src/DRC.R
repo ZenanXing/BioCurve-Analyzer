@@ -752,6 +752,8 @@ data_predct <- eventReactive(input$plot_Butn_1, {
       }
     }
     colnames(data_predct_na)[(n_var+1)] <- c("Response")
+  } else {
+    data_predct_na <- NULL
   }
   
   if (!all(df_ed()$FctName == "/")) {
@@ -763,7 +765,7 @@ data_predct <- eventReactive(input$plot_Butn_1, {
     }
     data_predct <- data_predct %>% unnest() %>% dplyr::select(1:(n_var+2))
     colnames(data_predct)[(n_var+1)] <- c("Response")
-    if (is.null(data_predct_na)) {data_predct <- rbind(data_predct, data_predct_na)}
+    if (!is.null(data_predct_na)) {data_predct <- rbind(data_predct, data_predct_na)}
   } else {
     data_predct <- data_predct_na
   }
