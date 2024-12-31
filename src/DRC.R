@@ -318,7 +318,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
            Neills_Test = map(Neills_Test_p, ~sig_test(.x, p = nell_p, sign = ">")),
            No_Effect_Test = map(No_Effect_Test_p, ~sig_test(.x, p = neffect_p, sign = "<")),
            Para_Test = map(Para_Info, ~para_sig_test(.x, p = para0_p)))
-  colnames(model_drc)[2] <- "RawData"
+  colnames(model_drc)[n_var+1] <- "RawData"
   
   # ED estimation method
   if (ed_methods == 'serra_greco_method') {
