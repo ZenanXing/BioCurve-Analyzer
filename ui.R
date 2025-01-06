@@ -64,7 +64,7 @@ navbarPage(
         div(style = "margin-top: -15px"), 
         p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86")),
         div(style = "margin-top: -15px"), 
-        p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
+        p(em("Serra A. et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
         div(style = "margin-top: -15px"), 
         p(em("Ritz C, Pipper CB, Streibig JC (2013) Analysis of germination data from agricultural experiments. Eur J Agron 45: 1–6")),
         div(style = "margin-top: -15px"), 
@@ -106,7 +106,7 @@ navbarPage(
                                          tags$span("Replicate", style = "font-weight: bold; background-color: #c5c5c5"), ", ",
                                          tags$span("Response", style = "font-weight: bold; background-color: #c5c5c5"), "."  
                                        ),
-                                       p("Note: Add the 'Factors' column if applicable, e.g. Protein, Compound, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name)."),
+                                       p("Note: Add the 'Factors' column if applicable, e.g. Protein, Compound, ", tags$em("et al"), "."),
                                        p(em("Click the question mark to see the detailed requirments")) %>% 
                                          helper(icon = "question-circle", 
                                                 type = "markdown",
@@ -127,7 +127,7 @@ navbarPage(
                                                         div(style = "text-align: right;", 
                                                             downloadButton(outputId = "dl_smp", label = "Download SampleData")), 
                                                         p(style = "text-align: left; margin-top: 10px;", 
-                                                          tags$b("Note: "), "The sample data is from a previously published paper. (Vaidya, A.S. et al, ", em("Science"), ", 2019)")
+                                                          tags$b("Note: "), "The sample data is from a previously published paper. (Vaidya, A.S. ", em("et al."), ", ", em("Science"), ", 2019)")
                                        ),
                                        
                                        # Upload the excel file
@@ -181,7 +181,7 @@ navbarPage(
                                          tags$span("After", style = "font-weight: bold; background-color: #c5c5c5"), ", ", 
                                          tags$span("Count", style = "font-weight: bold; background-color: #c5c5c5"), "."  
                                        ),
-                                       p("Note: Add the 'Factors' column if applicable, e.g. Genotype, Treatment, ", tags$em("et al."), "; try to ", tags$b("avoid using underscore"), " in the name."),
+                                       p("Note: Add the 'Factors' column if applicable, e.g. Genotype, Treatment, ", tags$em("et al"), "."),
                                        p(em("Click the question mark to see the detailed requirments")) %>% 
                                          helper(icon = "question-circle", 
                                                 type = "markdown", 
@@ -202,7 +202,7 @@ navbarPage(
                                                         div(style = "text-align: right;", 
                                                             downloadButton(outputId = "dl_smp_te", label = "Download SampleData")), 
                                                         p(style = "text-align: left; margin-top: 10px;", 
-                                                          tags$b("Note: "), "The sample data is from a previously published paper. (Eckhardt J. et al., ", em("Plant Biology"), ", 2024)")
+                                                          tags$b("Note: "), "The sample data is from a previously published paper. (Eckhardt J. ", em("et al."), ", ", em("Plant Biology"), ", 2024)")
                                        ),
                                        
                                        # Upload the excel file

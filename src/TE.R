@@ -83,30 +83,39 @@ observeEvent(input$upldData_Butn_te, {
 #### Scatterplot_dataset -----------------------------------------------------------------------------------
 data_scat_te <- reactive({
   req(data_values_te$n_var >= 0)
+  # number of variables
+  n_var <- isolate({data_values_te$n_var})
   df_sum <- data_te() %>%
-    tidyr::unite(col = "colComb", all_of(colnames(data_te())[1:(data_values_te$n_var + 1)]), sep = "_") %>%
-    group_by(colComb) %>%
+    #tidyr::unite(col = "colComb", all_of(colnames(data_te())[1:(n_var+1)]), sep = "_") %>%
+    #group_by(colComb) %>%
+    group_by(across(1:(n_var+1))) %>% 
     dplyr::summarise(sum = sum(.data[[data_values_te$count]], na.rm = TRUE), .groups = 'drop')
   df_accsum <- data_te() %>% 
-    arrange(across(1:(data_values_te$n_var+2))) %>% 
-    group_by(across(1:(data_values_te$n_var+3))) %>% 
+    arrange(across(1:(n_var+2))) %>% 
+    group_by(across(1:(n_var+3))) %>% 
     dplyr::summarise(count_sum = sum(.data[[data_values_te$count]], na.rm = TRUE), .groups = 'drop') %>% 
-    tidyr::unite(col = 'colComb', all_of(colnames(data_te())[1:(data_values_te$n_var+1)]), sep = '_') %>% 
-    left_join(df_sum, by = 'colComb') %>% 
+    #tidyr::unite(col = 'colComb', all_of(colnames(data_te())[1:(n_var+1)]), sep = '_') %>% 
+    #left_join(df_sum, by = 'colComb') %>% 
+    left_join(df_sum, by = colnames(df_sum)[1:(n_var+1)]) %>% 
     mutate(pct = count_sum/sum)
   
-  data_scat_temp <- df_accsum %>% arrange(across(1:2)) %>% group_by(colComb) %>% dplyr::reframe(respns = cumsum(pct))
+  data_scat_temp <- df_accsum %>% 
+    #arrange(across(1:(n_var+1))) %>% 
+    #group_by(colComb) %>% 
+    arrange(across(1:(n_var+2))) %>% 
+    group_by(across(1:(n_var+1))) %>% 
+    dplyr::reframe(respns = cumsum(pct))
   
   data_scat_te <- df_accsum %>% 
-    arrange(across(1:2)) %>%
+    #arrange(across(1:2)) %>%
     mutate(respns = data_scat_temp$respns) %>% 
-    tidyr::separate(colComb, into = all_of(colnames(data_te())[1: (data_values_te$n_var+1)]), sep = '_') %>% 
-    dplyr::select(all_of(colnames(data_te())[1: (data_values_te$n_var+3)]), respns)
+    #tidyr::separate(colComb, into = all_of(colnames(data_te())[1: (n_var+1)]), sep = '_') %>% 
+    dplyr::select(all_of(colnames(data_te())[1: (n_var+3)]), respns)
   
-  if(data_values_te$n_var == 0) {
+  if(n_var == 0) {
     colnames(data_scat_te) <- c("Replicate", "Before", "After", "Response")
   } else {
-    colnames(data_scat_te) <- c(colnames(data_te())[1:data_values_te$n_var], "Replicate", "Before", "After", "Response")
+    colnames(data_scat_te) <- c(colnames(data_te())[1:n_var], "Replicate", "Before", "After", "Response")
   }
   # data_scat_te$Before[data_scat_te$Before == 0] <- 0.03
   data_scat_te <- data_scat_te %>% mutate(After = replace(After, is.infinite(After), NA)) %>% drop_na()
@@ -282,9 +291,8 @@ df_et <- eventReactive(input$calculate_Butn_te, {
       group_by(across(1:n_var)) %>% 
       nest() %>% 
       mutate(ED_info = purrr::pmap(list(data), compute_et, fctList_monotnc = fctList_monotnc, const = const, time_intv = time_intv)) %>% 
-      unnest(ED_info) %>% 
-      tidyr::unite(col = "colComb", all_of(colnames(Data)[1:n_var]), sep = "_")
-    colnames(model_te)[2] <- "RawData"
+      unnest(ED_info)
+    colnames(model_te)[n_var+1] <- "RawData"
   }
   
   # Fit the data to loess model
@@ -297,9 +305,8 @@ df_et <- eventReactive(input$calculate_Butn_te, {
     loess_te <- data_scat_te() %>% 
       group_by(across(1:n_var)) %>% 
       nest() %>% 
-      mutate(Curve_Loess_data = purrr::map(data, loess_fit_te)) %>% 
-      tidyr::unite(col = "colComb", all_of(colnames(data_scat_te())[1:n_var]), sep = "_")
-    colnames(loess_te)[2] <- "ScatterData"
+      mutate(Curve_Loess_data = purrr::map(data, loess_fit_te))
+    colnames(loess_te)[n_var+1] <- "ScatterData"
   }
   
   # combine all the information
@@ -308,23 +315,23 @@ df_et <- eventReactive(input$calculate_Butn_te, {
   } else {
     df_et <- data_m_te() %>% 
       group_by(across(1:n_var)) %>% nest() %>% 
-      tidyr::unite(col = "colComb", all_of(colnames(data_m_te())[1:n_var]), sep = "_") %>% 
-      left_join(loess_te, by = "colComb") %>% 
-      left_join(model_te, by ="colComb") %>% 
-      separate(colComb, into = colnames(data_m_te())[1:n_var], sep = "_")
+      left_join(loess_te, by = colnames(loess_te)[1:n_var]) %>% 
+      left_join(model_te, by = colnames(model_te)[1:n_var])
   }
-  df_et <- df_et %>%
+  colnames(df_et)[n_var+1] <- "MeanData"
+  df_et <- df_et %>% 
+    ungroup() %>% 
     mutate(across(where(~ !is.list(.x)), ~ {
       replaced <- if (is.logical(.x) || is.numeric(.x)) as.character(.x) else .x
       replaced <- replace_na(replaced, "/") # Replace NA with "/"
       ifelse(replaced == "NaN", "/", replaced) # Replace "NaN" with "/"
     }))
-  colnames(df_et)[n_var+1] <- "MeanData"
   return(df_et)
 })
 
 #### Output - T50 table ###################################################################################
-T50_table <- reactive({
+## exported data frame
+df_et_exp <- reactive({
   req(df_et())
   n_var <- isolate({data_values_te$n_var})
   if (n_var != 0) {
@@ -336,6 +343,14 @@ T50_table <- reactive({
                       (n_var+6):(n_var+7)) # T50
   }
   df_temp <- df_et()[ , selected_var] 
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "T50_Mean", "T50_SE")
+  return(df_temp)
+})
+
+T50_table <- reactive({
+  req(df_et_exp())
+  n_var <- isolate({data_values_te$n_var})
+  df_temp <- df_et_exp() 
   df_temp <- df_temp %>% mutate(across((n_var + 2):ncol(df_temp), ~ map_chr(.x, display_format)))
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "T50 Mean", "T50 SE")
   return(df_temp)
@@ -519,6 +534,8 @@ data_predct_te <- eventReactive(input$plot_Butn_1_te, {
       
     }
     colnames(data_predct_te_na)[(n_var+1):(n_var+2)] <- c("After", "Response")
+  } else {
+    data_predct_te_na <- NULL
   }
   
   if (!all(df_et()$FctName == "/")) {
@@ -528,7 +545,7 @@ data_predct_te <- eventReactive(input$plot_Butn_1_te, {
     } else {
       data_predct_te <- data_predct_te %>% dplyr::select(1:n_var, "Curve_BestFit_data")
     }
-    data_predct_te <- data_predct_te %>% unnest() %>% dplyr::select(1:(n_var+2))
+    data_predct_te <- data_predct_te %>% unnest(cols = c(Curve_BestFit_data)) %>% dplyr::select(1:(n_var+2))
     colnames(data_predct_te)[(n_var+1):(n_var+2)] <- c("After", "Response")
     if (is.null(data_predct_te_na)) {data_predct_te <- rbind(data_predct_te, data_predct_te_na)}
     
@@ -569,25 +586,50 @@ L_P_te <- reactive({
   # Palette
   cbPalette <- c("#00A4FF", "#FD7FEE", "#03DFCA", "#990A3A", "#F37B63", "#05B756", "#A3FB86", "#097C91", "#015EC9","#840EAA")
   
-  
   if (n_var == 0) {
-    n_color <- 1
+    # color
+    clr <- get_palette(cbPalette, 1)
+    # annotation dataframe
+    anno_df <- df_et() %>% dplyr::select((n_var+6):(n_var+8)) %>% 
+      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
+    anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
+    # plot
     p <- ggplot(data = data_predct_te(), aes(x = After, y = Response)) + 
-      scale_color_manual(values = get_palette(cbPalette, n_color))
+      geom_line(color = clr) + 
+      geom_point(data = isolate({data_scat_te()}), aes(x = After, y = Response), alpha = 0.5, color = clr)
+    # T50
+    if (input$plot_ed50_ck_te == TRUE) {
+      p <- p +
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = T50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        # ed lines
+        geom_vline(data = anno_df, aes(xintercept = T50_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+    }
+    
   } else {
+    # color
     n_color <- isolate({n_distinct(data_scat_te()[[color_var]])})
-    #eval(parse(text = paste0("n_color <- isolate({n_distinct(data_scat_te()$", color_var, ")})")))
+    # annotation dataframe
+    anno_df <- df_et() %>% dplyr::select(1:n_var, (n_var+6):(n_var+8)) %>% 
+      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
+    anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
+    # plot
     p <- ggplot(data = data_predct_te(), aes(x = After, y = Response, color = eval(parse(text = color_var)), 
                                              group = eval(parse(text = color_var)))) + 
+      geom_line() + 
+      geom_point(data = isolate({data_scat_te()}), aes(x = After, y = Response, group = eval(parse(text = color_var))), alpha = 0.5) +
       scale_color_manual(color_var, values = get_palette(cbPalette, n_color), limits = legend_order)
+    # T50
+    if (input$plot_ed50_ck_te == TRUE) {
+      p <- p +
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = T50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        # ed lines
+        geom_vline(data = anno_df, aes(xintercept = T50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+    }
+    
   }
-  
-  if (n_var == 0) {
-    p <- p + geom_point(data = isolate({data_scat_te()}), aes(x = After, y = Response), alpha = 0.5)
-  } else {
-    p <- p + geom_point(data = isolate({data_scat_te()}), aes(x = After, y = Response, group = eval(parse(text = color_var))), alpha = 0.5)
-  }
-  
+
   if (n_var >= 3) {
     p <- p +
       # facet_grid
@@ -602,7 +644,6 @@ L_P_te <- reactive({
   
   
   p <- p + 
-    geom_line() +
     scale_x_log10() +
     scale_y_continuous(labels = scales::percent) +
     xlab(paste0("Time (", isolate({input$unit}), ")")) + 
@@ -615,33 +656,6 @@ L_P_te <- reactive({
           legend.text = element_text(size = 18),
           legend.title = element_text(size = 18))
   
-  # Annotation dataframe
-  if (n_var == 0) {
-    anno_df <- df_et() %>% dplyr::select((n_var+6):(n_var+8)) %>% 
-      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
-  } else {
-    anno_df <- df_et() %>% dplyr::select(1:n_var, (n_var+6):(n_var+8)) %>% 
-      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
-  }
-  anno_df[, (n_var + 1):ncol(anno_df)] <- lapply(anno_df[, (n_var + 1):ncol(anno_df)], as.numeric)
-  # T50
-  if (input$plot_ed50_ck_te == TRUE) {
-    if (n_var == 0 ) {
-      p <- p +
-        # response lines
-        geom_hline(data = anno_df, aes(yintercept = T50_res), linetype = "longdash", alpha = 0.5) + 
-        # ed lines
-        geom_vline(data = anno_df, aes(xintercept = T50_Mean), linetype = "longdash", alpha = 0.5)
-      
-    } else {
-      p <- p +
-        # response lines
-        geom_hline(data = anno_df, aes(yintercept = T50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-        # ed lines
-        geom_vline(data = anno_df, aes(xintercept = T50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
-      
-    }
-  }
   
   
   # # Responses
@@ -679,7 +693,7 @@ output$dl_plot_te <- downloadHandler(
 output$dl_plot_df_te <- downloadHandler(
   filename = function(){paste0(input$file_name_1_te, ".xlsx")},
   content = function(file) {
-    list_of_datasets <- list("T50_related" = T50_table(), 
+    list_of_datasets <- list("T50_related" = df_et_exp(), 
                              "Bestfit_dataframe" = data_predct_te(), 
                              "ScatterPlot_dataframe" = data_scat_te()
     )
@@ -699,6 +713,8 @@ output$dl_report_te <- downloadHandler(
                         unit = input$unit,
                         n_var = ncol(data_predct_te())-2,
                         color_var = input$line_color_v_te,
+                        plot_ed50_ck_te = input$plot_ed50_ck_te,
+                        T50_related = df_et_exp(),
                         Bestfit_dataframe = data_predct_te(),
                         ScatterPlot_dataframe = data_scat_te()
     )

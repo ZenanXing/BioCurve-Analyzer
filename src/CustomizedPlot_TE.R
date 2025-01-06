@@ -130,8 +130,24 @@ custmz_P_te <- reactive({
   my_colors <- unlist(strsplit(input$palette_provd_te, ", "))
   
   if (n_var == 0) {
+    clr <- my_colors
     p <- p + 
-      scale_color_manual(values = my_colors)
+      geom_line(color = clr) + 
+      geom_point(data = isolate({data_scat_te()}), aes(x = After, y = Response), alpha = 0.5, color = clr)
+    
+    # annotation dataframe
+    anno_df <- df_et() %>% dplyr::select((n_var+6):(n_var+8)) %>% 
+      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
+    anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
+    # T50
+    if (input$plot_ed50_ck_te == TRUE) {
+      p <- p +
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = T50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        # ed lines
+        geom_vline(data = anno_df, aes(xintercept = T50_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+    }
+    
   } else {
     p <- p + 
       scale_color_manual(values = my_colors, name = input$legend_title_te, 
@@ -231,7 +247,7 @@ output$dl_plot_2_te<- downloadHandler(
 output$dl_plot_df_2_te <- downloadHandler(
   filename = function(){paste0(input$file_name_2_te, ".xlsx")},
   content = function(file) {
-    list_of_datasets <- list("T50_related" = T50_table(), 
+    list_of_datasets <- list("T50_related" = df_et_exp(), 
                              "Bestfit_dataframe" = data_predct_te(), 
                              "ScatterPlot_dataframe" = data_scat_te()
     )
@@ -250,6 +266,8 @@ output$dl_report_2_te <- downloadHandler(
     params_2_te <- list(table = T50_table(),
                         n_var = ncol(data_predct_te())-2,
                         color_var = input$line_color_v_te,
+                        plot_ed50_ck_te = input$plot_ed50_ck_te,
+                        T50_related = df_et_exp(),
                         Bestfit_dataframe = data_predct_te(),
                         ScatterPlot_dataframe = data_scat_te(),
                         plot_title = input$plot_title_te,

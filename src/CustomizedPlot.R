@@ -128,12 +128,59 @@ custmz_P <- reactive({
   #  req(input$palette_slct)
   n_var <- ncol(data_predct())-2
   p <- L_P()
-  
+  # Colors
   my_colors <- unlist(strsplit(input$palette_provd, ", "))
+  # Appearance
+  plot_appearance <- isolate({input$plot_appearance})
+  
+  # Annotation dataframe
+  ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
+  if (n_var == 0) { selected_var <- NULL } else { selected_var <- c(1:n_var)}
+  if (ed_methods == 'serra_greco_method') {
+    selected_var <- c(selected_var, (n_var+25):(n_var+33))
+  } else {
+    selected_var <- c(selected_var, (n_var+25):(n_var+29))
+  }
+  anno_df <- df_ed()[ , selected_var]
+  anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
   
   if (n_var == 0) {
-    p <- p + 
-      scale_color_manual(values = my_colors)
+    # color
+    clr <- my_colors
+    # plot
+    p <- p + geom_line(color = clr)
+    # appearance
+    if (plot_appearance == "all") {
+      p <- p + geom_point(data = isolate({data_scat()}), aes(x = Conc, y = Response), alpha = 0.5, color = clr)
+    } else {
+      p <- p + geom_point(data = isolate({data_m_sd()}), aes(x = Conc, y = Mean), alpha = 0.5, color = clr) + 
+        geom_errorbar(data = isolate({data_m_sd()}), aes(x = Conc, y = Mean, ymin = Mean - SD, ymax = Mean + SD), width = 0.2, alpha = 0.8, color = clr)
+    }
+    # ED50
+    if (input$plot_ed50_ck == TRUE) {
+      if (ed_methods == 'serra_greco_method') {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+          # ed lines - left
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50_l), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_l), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_l), linetype = "dotted", alpha = 0.5, color = clr) +
+          # ed lines - right
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50_r), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r), linetype = "dotted", alpha = 0.5, color = clr)
+      } else {
+        p <- p +
+          # response lines
+          geom_hline(data = anno_df, aes(yintercept = RG_ED50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+          # ed lines
+          geom_vline(data = anno_df, aes(xintercept = RG_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = RG_ED50L), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = RG_ED50U), linetype = "dotted", alpha = 0.5, color = clr)
+      }
+    }
   } else {
     p <- p + 
       scale_color_manual(values = my_colors, name = input$legend_title, 
@@ -260,10 +307,12 @@ output$dl_report_2 <- downloadHandler(
                      two_point_method = input$two_point_method,
                      n_var = ncol(data_predct())-2,
                      color_var = input$line_color_v,
+                     ED_related = df_ed_exp(),
                      Bestfit_dataframe = data_predct(),
                      ScatterPlot_dataframe = data_scat(),
                      Mean_SD_dataframe = data_m_sd(),
                      Plot_appearance = input$plot_appearance,
+                     plot_ed50_ck = input$plot_ed50_ck,
                      plot_title = input$plot_title,
                      label_x_axis = input$x_label,
                      label_y_axis = input$y_label,

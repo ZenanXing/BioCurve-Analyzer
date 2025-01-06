@@ -90,10 +90,12 @@ m_select_new <- function(df_temp, fctList_monotnc, fctList_biphsc, const){
 ## SG method ---------------------------------------------------------------
 
 # Monotonicity
-monotonicity <- function(fittedModel){
+monotonicity <- function(fittedModel, mindose){
+  
+  #fittedModel <- opt_mod
   
   dose <- fittedModel$data$Conc
-  doseRange <- seq_log(min(dose) + 1, max(dose), length.out = 100)
+  doseRange <- seq_log(mindose, max(dose), length.out = 1000)
   p <- stats::predict(fittedModel, newdata = data.frame(dose = as.vector(doseRange))) %>% as.data.frame() %>% 
     mutate(dose = doseRange)
   colnames(p) <- c("respns", "conc")
@@ -131,16 +133,16 @@ control_variance <- function(model, constant_variance, training_dose){
 compute_ed <- function(opt_mod, rl = 1.349, dataframe, 
                        constantVar, conf_interval, interval_type, bp, minidose, ed50_type) {
   # dataframe <- Data[1, ] %>% unnest()
-  # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = W1.4(fixed = c(NA, NA, NA, NA)))
-  # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = BC.5())
+  # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = LL.4(fixed = c(NA, 0, NA, NA)))
+  # plot(opt_mod)
+  
   respns <- dataframe$Response
   dose <- dataframe$Conc
   fctName <- summary(opt_mod)[["fctName"]]
   
-  # dermine the monotonicity of the curve/the first part of curve
-  monotonic_behaviour <- monotonicity(fittedModel = opt_mod)
-  
-  bmd_val <- tryCatch({
+  if(is.na(fctName)) {
+    bmd_val <- matrix(NA, 1, 12)
+  } else {
     
     # starting point - adopted from plot.drc()
     if (min(dose) == 0) {
@@ -153,101 +155,104 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
       min_dose <- min(dose)
     }
     
-    # starting point response and sd
-    starting_point <- predict(opt_mod, data.frame(dose = min(dose)))
-    sd_level <- rl * sqrt(control_variance(model = opt_mod, constant_variance = constantVar, training_dose = dose))
+    # calculate the 50% max response for ed50 estimation
+    doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
+    if(min(dose) == 0){doseRange <- c(0, doseRange)}
+    
+    # calculate the curve interval
+    conf_interval_cv <- stats::predict(opt_mod, newdata = data.frame(dose = as.vector(doseRange)), interval = "confidence", level = conf_interval) %>% as.data.frame()
+    
+    # Export the nested data for generate plot
+    curve_df <- conf_interval_cv %>% dplyr::select(1) %>% mutate(Conc = doseRange)
+    if(min(dose) == 0) {curve_df <- curve_df %>% filter(Conc != 0)}
+    colnames(curve_df) <- c("Prediction", "Conc")
+    bmd_val <- nest(curve_df, data = everything())
+    colnames(bmd_val) <- "Curve_BestFit_data"
+    
+    # dermine the monotonicity of the curve/the first part of curve
+    monotonic_behaviour <- monotonicity(fittedModel = opt_mod, mindose = min_dose)
+    
+    # Export the info.
+    bmd_val <- bmd_val %>% 
+      mutate(FctName = gsub("(.*)\\()", "\\1", fctName),
+             Monotonicity = monotonic_behaviour)
     
     if (monotonic_behaviour == "Flat") {
-      bmd_val = NULL
+      
+      temp_res <- matrix(NA, 1, 9) %>% as.data.frame()
+      
     } else {
-      
-      if (monotonic_behaviour == "Up") {
-        response_level = starting_point + sd_level
-      } else if (monotonic_behaviour == "Down") {
-        response_level = starting_point - sd_level
-      }
-      # calculate the 50% max response for ed50 estimation
-      doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
-      if(min(dose) == 0){doseRange <- c(0, doseRange)}
-      
-      # calculate the curve interval
-      conf_interval_cv <- stats::predict(opt_mod, newdata = data.frame(dose = as.vector(doseRange)), interval = "confidence", level = conf_interval) %>% as.data.frame()
-      
-      # define the doseRange before & after peak/trough
-      if(monotonic_behaviour == "Up"){
-        doseRange_1st <- c(1: which.max(conf_interval_cv[, 1]))
-        doseRange_2nd <- c(which.max(conf_interval_cv[, 1]):nrow(conf_interval_cv))
-      }else if (monotonic_behaviour == "Down"){
-        doseRange_1st <- c(1: which.min(conf_interval_cv[, 1]))
-        doseRange_2nd <- c(which.min(conf_interval_cv[, 1]):nrow(conf_interval_cv))
-      }
-      
-      # calculate the half max response in the first phase under the concs tested in the experiment
-      if (ed50_type == "Absolute") {
-        half_resp <- 50
-      } else {
-        half_resp <- max(conf_interval_cv[doseRange_1st, 1]) - (abs(max(conf_interval_cv[doseRange_1st, 1]) - min(conf_interval_cv[doseRange_1st, 1]))/2)
-      }
-      
-      # Export the nested data for generate plot
-      curve_df <- conf_interval_cv %>% dplyr::select(1) %>% mutate(Conc = doseRange)
-      if(min(dose) == 0) {curve_df <- curve_df %>% filter(Conc != 0)}
-      colnames(curve_df) <- c("Prediction", "Conc")
-      bmd_val <- nest(curve_df, data = everything())
-      colnames(bmd_val) <- "Curve_BestFit_data"
-      
-      ### SG Method - approx()
-      
-      # calculate ed50 and both bounds
-      ## left ed50
-      half_con <-  stats::approx(x = conf_interval_cv[doseRange_1st, 1], y = doseRange[doseRange_1st], xout = half_resp)$y
-      half_con_1 <-  try(stats::approx(x = conf_interval_cv[doseRange_1st, 2], y = doseRange[doseRange_1st], xout = half_resp)$y)
-      half_con_2 <-  try(stats::approx(x = conf_interval_cv[doseRange_1st, 3], y = doseRange[doseRange_1st], xout = half_resp)$y)
-      
-      # determine the upper and lower bound by monotonicity 
-      if (inherits(half_con_1, "try-error")) { half_con_1 <- NA }
-      if (inherits(half_con_2, "try-error")) { half_con_2 <- NA }
-      if(monotonic_behaviour == "Down"){
-        edl <- half_con_1
-        edu <- half_con_2
-      } else {
-        edl <- half_con_2
-        edu <- half_con_1
-      }
-      ## right ed50
-      half_con2 <-  try(stats::approx(x = conf_interval_cv[doseRange_2nd, 1], y = doseRange[doseRange_2nd], xout = half_resp)$y)
-      half_con2_1 <-  try(stats::approx(x = conf_interval_cv[doseRange_2nd, 2], y = doseRange[doseRange_2nd], xout = half_resp)$y)
-      half_con2_2 <-  try(stats::approx(x = conf_interval_cv[doseRange_2nd, 3], y = doseRange[doseRange_2nd], xout = half_resp)$y)
-      
-      # determine the upper and lower bound by monotonicity 
-      if (inherits(half_con2, "try-error")) { half_con2 <- NA }
-      if (inherits(half_con2_1, "try-error")) { half_con2_1 <- NA }
-      if (inherits(half_con2_2, "try-error")) { half_con2_2 <- NA }
-      if(monotonic_behaviour == "Down"){
-        edl2 <- half_con2_2
-        edu2 <- half_con2_1
-      } else {
-        edl2 <- half_con2_1
-        edu2 <- half_con2_2
-      }
-      
-      # Export the info.
-      bmd_val <- bmd_val %>% 
-        mutate(FctName = gsub("(.*)\\()", "\\1", fctName),
-               Monotonicity = monotonic_behaviour, 
-               max_res = max(conf_interval_cv[doseRange_1st, 1]), 
-               min_res = min(conf_interval_cv[doseRange_1st, 1]),
-               ED50_res = half_resp, 
-               ED50_l_Mean = half_con, ED50_l_L = edl, ED50_l_U = edu,
-               ED50_r_Mean = half_con2, ED50_r_L = edl2, ED50_r_U = edu2)
+      temp_res <- tryCatch({
+        
+        # define the doseRange before & after peak/trough
+        if(monotonic_behaviour == "Up"){
+          doseRange_1st <- c(1: which.max(conf_interval_cv[, 1]))
+          doseRange_2nd <- c(which.max(conf_interval_cv[, 1]):nrow(conf_interval_cv))
+        }else if (monotonic_behaviour == "Down"){
+          doseRange_1st <- c(1: which.min(conf_interval_cv[, 1]))
+          doseRange_2nd <- c(which.min(conf_interval_cv[, 1]):nrow(conf_interval_cv))
+        }
+        
+        # calculate the half max response in the first phase under the concs tested in the experiment
+        if (ed50_type == "Absolute") {
+          half_resp <- 50
+        } else {
+          half_resp <- max(conf_interval_cv[doseRange_1st, 1]) - (abs(max(conf_interval_cv[doseRange_1st, 1]) - min(conf_interval_cv[doseRange_1st, 1]))/2)
+        }
+
+        ### SG Method - approx()
+        
+        # calculate ed50 and both bounds
+        ## left ed50
+        half_con <- stats::approx(x = conf_interval_cv[doseRange_1st, 1], y = doseRange[doseRange_1st], xout = half_resp)$y
+        half_con_1 <- try(stats::approx(x = conf_interval_cv[doseRange_1st, 2], y = doseRange[doseRange_1st], xout = half_resp)$y)
+        half_con_2 <- try(stats::approx(x = conf_interval_cv[doseRange_1st, 3], y = doseRange[doseRange_1st], xout = half_resp)$y)
+        
+        # determine the upper and lower bound by monotonicity 
+        if (inherits(half_con_1, "try-error")) { half_con_1 <- NA }
+        if (inherits(half_con_2, "try-error")) { half_con_2 <- NA }
+        if(monotonic_behaviour == "Down"){
+          edl <- half_con_1
+          edu <- half_con_2
+        } else {
+          edl <- half_con_2
+          edu <- half_con_1
+        }
+        ## right ed50
+        half_con2 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 1], y = doseRange[doseRange_2nd], xout = half_resp)$y)
+        half_con2_1 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 2], y = doseRange[doseRange_2nd], xout = half_resp)$y)
+        half_con2_2 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 3], y = doseRange[doseRange_2nd], xout = half_resp)$y)
+        
+        # determine the upper and lower bound by monotonicity 
+        if (inherits(half_con2, "try-error")) { half_con2 <- NA }
+        if (inherits(half_con2_1, "try-error")) { half_con2_1 <- NA }
+        if (inherits(half_con2_2, "try-error")) { half_con2_2 <- NA }
+        if(monotonic_behaviour == "Down"){
+          edl2 <- half_con2_2
+          edu2 <- half_con2_1
+        } else {
+          edl2 <- half_con2_1
+          edu2 <- half_con2_2
+        }
+        
+        # Export the info.
+        temp_res <- data.frame(
+          max_res = max(conf_interval_cv[doseRange_1st, 1]), 
+          min_res = min(conf_interval_cv[doseRange_1st, 1]),
+          ED50_res = half_resp, 
+          ED50_l_Mean = half_con, ED50_l_L = edl, ED50_l_U = edu, 
+          ED50_r_Mean = half_con2, ED50_r_L = edl2, ED50_r_U = edu2
+          )
+        
+      }, error = function(e) {
+        print(e)
+        temp_res <- matrix(NA, 1, 9) %>% as.data.frame()
+      })
       
     }
-    
-  }, error = function(e) {
-    print(e)
-    bmd_val = NULL
-  })
-  
+    # Export the info.
+    bmd_val <- cbind(bmd_val, temp_res)
+  }
   return(as.data.frame(bmd_val))
   
 }
@@ -261,8 +266,8 @@ compute_ed_SG <- function(df, fct, bp, minidose, ed50_type){
   }else{
     tempED <- matrix(NA, 1, 12) %>% as.data.frame()
   }
-  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "SG_max_res", "SG_min_res", "SG_ED50_res", 
-                        "SG_ED50_l", "SG_ED50L_l", "SG_ED50U_l", "SG_ED50_r", "SG_ED50L_r", "SG_ED50U_r")
+  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "SG_max_res", "SG_min_res", 
+                        "SG_ED50_res", "SG_ED50_l", "SG_ED50L_l", "SG_ED50U_l", "SG_ED50_r", "SG_ED50L_r", "SG_ED50U_r")
   return(tempED)
   
 }
@@ -375,70 +380,72 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
   if (!inherits(tempObj, "try-error")){
     fctName <- summary(tempObj)[["fctName"]]
     
-    # dermine the monotonicity of the curve/the first part of curve
-    monotonic_behaviour <- monotonicity(fittedModel = tempObj)
-    
-    bmd_val <- tryCatch({
-      
-      # starting point - adopted from plot.drc()
-      if (min(dose) == 0) {
-        if (bp == "default") {
-          min_dose <- minidose
-        } else {
-          min_dose <- as.numeric(bp)
-        }
+    # starting point - adopted from plot.drc()
+    if (min(dose) == 0) {
+      if (bp == "default") {
+        min_dose <- minidose
       } else {
-        min_dose <- min(dose)
+        min_dose <- as.numeric(bp)
       }
+    } else {
+      min_dose <- min(dose)
+    }
+    
+    # doseRange
+    doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
+    
+    
+    # Export the nested data for generate plot
+    ## calculate the curve interval
+    conf_interval_cv <- stats::predict(tempObj, newdata = data.frame(dose = as.vector(doseRange)), interval = "confidence", level = 0.95) %>% as.data.frame()
+    curve_df <- conf_interval_cv %>% dplyr::select(1) %>% mutate(Conc = doseRange)
+    colnames(curve_df) <- c("Prediction", "Conc")
+    bmd_val <- nest(curve_df, data = everything())
+    colnames(bmd_val) <- "Curve_BestFit_data"
+    
+    # Determine the monotonicity of the curve/the first part of curve
+    monotonic_behaviour <- monotonicity(fittedModel = tempObj, mindose = min_dose)
+    
+    # Combine all the info.
+    bmd_val <- bmd_val %>% 
+      mutate(FctName = gsub("(.*)\\()", "\\1", fctName),
+             Monotonicity = monotonic_behaviour)
+             
+    temp_res <- tryCatch({
       
       if (monotonic_behaviour == "Flat") {
-        bmd_val = NULL
+        
+        temp_res <- matrix(NA, 1, 5) %>% as.data.frame()
+        
       } else {
-        
-        # doseRange
-        doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
-        
-        # calculate the curve interval
-        conf_interval_cv <- stats::predict(tempObj, newdata = data.frame(dose = as.vector(doseRange)), interval = "confidence", level = 0.95) %>% as.data.frame()
-        
-        # Export the nested data for generate plot
-        curve_df <- conf_interval_cv %>% dplyr::select(1) %>% mutate(Conc = doseRange)
-        colnames(curve_df) <- c("Prediction", "Conc")
-        bmd_val <- nest(curve_df, data = everything())
-        colnames(bmd_val) <- "Curve_BestFit_data"
         
         # ED50
         ED_fct <- try(ED(tempObj, 50, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
         if(inherits(ED_fct, "try-error")) { 
-          ED_fct <- matrix(NA, 1, 4)
+          ED_fct <- matrix(NA, 1, 4) %>% as.data.frame()
         } else {
           ED_fct <- ED_fct %>% as.data.frame()
         }
         colnames(ED_fct) <- c("Std_ED50_Mean", "Std_ED50_SE", "Std_ED50L", "Std_ED50U")
         half_resp <- try(predict(tempObj, newdata = data.frame(dose = ED_fct$Std_ED50_Mean)))
-        if (!inherits(half_resp, "try-error")) {half_resp <- as.numeric(half_resp)} else {half_resp <- NA}
-        
-        
+        if (!inherits(half_resp, "try-error")) { half_resp <- as.numeric(half_resp) } else { half_resp <- NA }
+        # Export the info.
+        temp_res <- data.frame(Std_ED50_res = half_resp) %>% cbind(ED_fct)
       }
-      # Export the info.
-      bmd_val <- bmd_val %>% 
-        mutate(FctName = gsub("(.*)\\()", "\\1", fctName),
-               Monotonicity = monotonic_behaviour, 
-               Std_ED50_res = half_resp) %>% 
-        cbind(ED_fct)
       
     }, error = function(e) {
       print(e)
-      bmd_val = NULL
+      temp_res <- matrix(NA, 1, 5) %>% as.data.frame()
     })
-    
-    tempED <- as.data.frame(bmd_val)
-    
+    # Export the info.
+    bmd_val <- cbind(bmd_val, temp_res)
+
   } else {
-    tempED <- matrix(NA, 1, 8) %>% as.data.frame()
-    colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "Std_ED50_res", "Std_ED50_Mean", "Std_ED50_SE", "Std_ED50L", "Std_ED50U" )
+    bmd_val <- matrix(NA, 1, 8) %>% as.data.frame()
   }
-  return(tempED)
+  colnames(bmd_val) <- c("Curve_BestFit_data", "FctName", "Monotonicity", 
+                         "RG_ED50_res", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50L", "RG_ED50U")
+  return(bmd_val)
 }
 
 ## Fit the data to loess model ---------------------------------------------
@@ -466,10 +473,10 @@ loess_fit_drc <- function(df, bp, minidose) {
     temp_Ret <- predict(tempObj, newdata = data.frame(Conc = as.vector(doseRange)),
                         interval = TRUE, level = 0.95) %>% as.data.frame() %>% 
       mutate(Conc = doseRange) %>% drop_na()
+    colnames(temp_Ret) <- c("Prediction", "Conc") 
   } else {
-    temp_Ret <- matrix(NA, 1, 2) %>% as.data.frame()
+    temp_Ret <- NULL
   }
-  colnames(temp_Ret) <- c("Prediction", "Conc") 
   return(temp_Ret)
 }
 
@@ -529,12 +536,7 @@ sig_test <- function(x, sign, p) {
 }
 
 para_sig_test <- function(df, p) {
-  # df <- model_drc$Para_Info
-  if (is.null(df) || all(is.na(df))) {
-    sig <- "/"
-  } else {
-    sig <- ifelse(all(df$`p.value` < as.numeric(p)), "Significant", "Non-significant")
-  }
+  sig <- ifelse(all(df$`p.value` < as.numeric(p)), "Significant", "Non-significant")
   return(sig)
 }
 
@@ -625,11 +627,11 @@ loess_fit_te <- function(df) {
     timeRange <- seq_log(min(df_temp$After), max(df_temp$After), length.out = 500)
     temp_Ret <- predict(tempObj, newdata = data.frame(After = as.vector(timeRange)),
                         interval = TRUE, level = 0.95) %>% as.data.frame() %>% 
-      mutate(time = timeRange) %>% drop_na()  
+      mutate(time = timeRange) %>% drop_na()
+    colnames(temp_Ret) <- c("Prediction", "time")
   } else {
-    temp_Ret <- matrix(NA, 1, 2) %>% as.data.frame()
+    temp_Ret <- NULL
   }
-  colnames(temp_Ret) <- c("Prediction", "time")
   return(temp_Ret)
 }
 
