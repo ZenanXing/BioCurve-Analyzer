@@ -54,7 +54,6 @@ library(ggthemes)
 library(cowplot)
 library(extrafont)
 library(ggpubr)
-library(writexl)
 library(openxlsx)
 library(rmarkdown)
 ```
