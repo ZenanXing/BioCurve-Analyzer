@@ -24,7 +24,7 @@ m_select_new <- function(df_temp, fctList_monotnc, fctList_biphsc, const){
   
   fctList_df <- data.frame(fctList = fctList) %>% 
     separate(fctList, into = c("Fct", "c", "d"), sep = "_") %>% 
-    mutate(parms_n = as.numeric(gsub(".*\\.([0-9]+)", "\\1", Fct)),
+    mutate(parms_n = as.numeric(gsub(".*\\.([0-9]+).*", "\\1", Fct)),
            parm = pmap(list(c, d, parms_n), function (c,d,n) { if (!is.na(n)) {paste0("fixed = c(", paste(c("NA", c, d, rep("NA", n-3)), collapse = ", "), ")")} else {""}}),
            fctList_f = paste0(Fct, "(", parm, ")"))
   
@@ -78,8 +78,8 @@ m_select_new <- function(df_temp, fctList_monotnc, fctList_biphsc, const){
   }
   ## Change the function name
   df_fct <- data.frame(
-    Fct = c("LL.4", "LL.5", "W1.4", "W2.4", "BC.5", "DRC.beta", NA),
-    Model = c("Log-logistic\n(4 paras)", "Log-logistic\n(5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", "beta", NA)
+    Fct = c("LL.4", "LL.5", "W1.4", "W2.4", "BC.5", "CRS.5a", "CRS.5b", "CRS.5c", "UCRS.5a", "UCRS.5b", "UCRS.5c", "CRS.6", "UCRS.6", "DRC.beta", NA),
+    Model = c("Log-logistic\n(4 paras)", "Log-logistic\n(5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", rep("Cedergreen-Ritz-Streibig", 8), "beta", NA)
   )
   df_ret <- df_ret %>% left_join(df_fct, by = "Fct")
   

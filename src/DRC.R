@@ -259,6 +259,15 @@ df_ed <- eventReactive(input$calculate_Butn, {
       c_d <- expand.grid(c = c, d = d)
       fctList_biphsc <- c(fctList_biphsc, paste("BC.5", c_d$c, c_d$d, sep = "_"))
     }
+    ### Cedergreen-Ritz-Streibig models
+    if (input$CRS) {
+      if(is.na(as.numeric(input$CRS_c))) {c <- c("0", "NA")} else {c <- input$CRS_c}
+      c_d <- expand.grid(c = c, d = "NA")
+      fctList_biphsc <- c(fctList_biphsc, 
+                          paste("CRS.5a", c_d$c, c_d$d, sep = "_"), paste("CRS.5b", c_d$c, c_d$d, sep = "_"), paste("CRS.5c", c_d$c, c_d$d, sep = "_"),
+                          paste("UCRS.5a", c_d$c, c_d$d, sep = "_"), paste("UCRS.5b", c_d$c, c_d$d, sep = "_"), paste("UCRS.5c", c_d$c, c_d$d, sep = "_"),
+                          "CRS.6", "UCRS.6")
+    }
     ### beta models
     if (input$beta) {
       fctList_biphsc <- c(fctList_biphsc, "DRC.beta")
@@ -533,7 +542,15 @@ output$biphasicmodels <- renderUI({
       ),
       fluidRow(
         div(style = "display: flex; justify-content: center; align-items: center;", 
-            column(6, div(style = "display:flex;align-items:center;", checkboxInput("beta", "beta", TRUE))),
+            column(6, div(style = "display:flex;align-items:center;", checkboxInput("CRS", "Cedergreen-Ritz-Streibig", FALSE))),
+            column(3, style = "margin-right: 5px;", 
+                   textInput("CRS_c", NULL, "Not Fixed")),
+            column(3, style = "margin-right: 5px;")
+        )
+      ),
+      fluidRow(
+        div(style = "display: flex; justify-content: center; align-items: center;", 
+            column(6, div(style = "display:flex;align-items:center;", checkboxInput("beta", "beta", FALSE))),
             column(6, style = "margin-right: 10px;")
         )
       )
