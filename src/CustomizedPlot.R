@@ -124,32 +124,47 @@ observeEvent(input$legend_order, {
 
 #### Customized Plot -------------------------------------------------------------------------------------------
 custmz_P <- reactive({
+  
   req(input$palette_provd)
-  #  req(input$palette_slct)
-  n_var <- ncol(data_predct())-2
+  
+  n_var <- isolate({data_values$n_var})
   p <- L_P()
-  # Colors
-  my_colors <- unlist(strsplit(input$palette_provd, ", "))
+  
+  color_var <- isolate({input$line_color_v})
+  if (n_var <= 1 ) {
+    facet_var_row <- ""
+    facet_var_col <- ""
+  } else {
+    if (n_var == 2) {
+      facet_var_row <- isolate({input$facet_row_v})
+      facet_var_col <- "."
+    } else {
+      facet_var_row <- isolate({input$facet_row_v})
+      facet_var_col <- isolate({paste(setdiff(colnames(isolate({data()}))[1:n_var], c(color_var, facet_var_row)), collapse = "+")})
+    }
+  }
+  
+  
+  # Palette
+  palette <- unlist(strsplit(input$palette_provd, ", "))
+  
   # Appearance
   plot_appearance <- isolate({input$plot_appearance})
   
   # Annotation dataframe
   ed_methods <- isolate({input$ed_methods})
   ed50_type <- isolate({input$ed50_type})
-  if (n_var == 0) { selected_var <- NULL } else { selected_var <- c(1:n_var)}
-  if (ed_methods == 'serra_greco_method') {
-    selected_var <- c(selected_var, (n_var+25):(n_var+33))
-  } else {
-    selected_var <- c(selected_var, (n_var+25):(n_var+29))
-  }
-  anno_df <- df_ed()[ , selected_var]
+  if (n_var == 0) { selected_var <- c((n_var+30):(n_var+48)) } else { selected_var <- c(1:n_var, (n_var+30):(n_var+48))}
+  anno_df <- isolate({df_ed()})[ , selected_var]
   anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
   
   if (n_var == 0) {
     # color
-    clr <- my_colors
+    clr <- palette
     # plot
-    p <- p + geom_line(color = clr)
+    p <- ggplot(data = data_predct(), aes(x = Conc, y = Response)) + 
+      geom_line(color = clr) + 
+      scale_x_log10(labels = function(x) format(x, scientific = FALSE))
     # appearance
     if (plot_appearance == "all") {
       p <- p + geom_point(data = isolate({data_scat()}), aes(x = Conc, y = Response), alpha = 0.5, color = clr)
@@ -159,33 +174,69 @@ custmz_P <- reactive({
     }
     # ED50
     if (input$plot_ed50_ck == TRUE) {
-      if (ed_methods == 'serra_greco_method') {
+      p <- p + 
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = ED50_l_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        geom_hline(data = anno_df, aes(yintercept = ED50_r_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        # ed lines - left
+        geom_vline(data = anno_df, aes(xintercept = ED50_l_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+        # ed lines - right
+        geom_vline(data = anno_df, aes(xintercept = ED50_r_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+      
+      if (input$plot_ci_ck == TRUE) {
         p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
           # ed lines - left
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50_l), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_l), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_l), linetype = "dotted", alpha = 0.5, color = clr) +
+          geom_vline(data = anno_df, aes(xintercept = ED50_l_L), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = ED50_l_U), linetype = "dotted", alpha = 0.5, color = clr) +
           # ed lines - right
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50_r), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r), linetype = "dotted", alpha = 0.5, color = clr)
-      } else {
+          geom_vline(data = anno_df, aes(xintercept = ED50_r_L), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = ED50_r_U), linetype = "dotted", alpha = 0.5, color = clr)
+      }
+      
+    }
+    # Max & Min
+    if (input$plot_resline_ck == TRUE) {
+      p <- p +
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = max_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        geom_hline(data = anno_df, aes(yintercept = min_res), linetype = "longdash", alpha = 0.5, color = clr)
+    }
+    # LDS & M
+    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+      if (input$plot_lds_m_ck == TRUE) {
         p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = RG_ED50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
-          # ed lines
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50L), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50U), linetype = "dotted", alpha = 0.5, color = clr)
+          # LDS
+          geom_hline(data = anno_df, aes(yintercept = start_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = LDS_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+          # M
+          geom_hline(data = anno_df, aes(yintercept = m_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = M), linetype = "longdash", alpha = 0.5, color = clr)
+        
+        if (input$plot_ci_ck == TRUE) {
+          p <- p +
+            # LDS
+            geom_vline(data = anno_df, aes(xintercept = LDS_L), linetype = "dotted", alpha = 0.5, color = clr) + 
+            geom_vline(data = anno_df, aes(xintercept = LDS_U), linetype = "dotted", alpha = 0.5, color = clr)
+        }
       }
     }
   } else {
-    p <- p + 
-      scale_color_manual(values = my_colors, name = input$legend_title, 
+    p <- L_P() + 
+      scale_color_manual(values = palette, name = input$legend_title, 
                          limits = unlist(strsplit(input$legend_order, ", ")), labels = unlist(strsplit(input$legend_names, ", "))
       )
+  }
+  
+  if (n_var >= 3) {
+    p <- p +
+      # facet_grid
+      facet_grid(eval(parse(text = paste0(facet_var_row, "~", facet_var_col))))
+  } else {
+    if (n_var > 1){
+      p <- p +
+        # facet_wrap
+        facet_wrap(eval(parse(text = paste0(facet_var_row, "~", facet_var_col))), ncol = 4)
+    }
   }
   
   font_size <- as.numeric(input$font_size)
@@ -299,7 +350,7 @@ output$dl_report_2 <- downloadHandler(
     file.copy("reports/Report_Custom.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
-    params_2 <- list(table_ed50 = ED50_table(),
+    params_2 <- list(table_mono = ED50_table_Monotonic(),
                      table_rm = RM_ED50_table(),
                      table_stats = Stats_table(),
                      ed50_type = input$ed50_type, 
@@ -312,7 +363,10 @@ output$dl_report_2 <- downloadHandler(
                      ScatterPlot_dataframe = data_scat(),
                      Mean_SD_dataframe = data_m_sd(),
                      Plot_appearance = input$plot_appearance,
-                     plot_ed50_ck = input$plot_ed50_ck,
+                     plot_ed50_ck = input$plot_ed50_ck, 
+                     plot_lds_m_ck = input$plot_lds_m_ck, 
+                     plot_resline_ck = input$plot_resline_ck,
+                     plot_ci_ck = input$plot_ci_ck,
                      plot_title = input$plot_title,
                      label_x_axis = input$x_label,
                      label_y_axis = input$y_label,

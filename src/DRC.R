@@ -325,17 +325,21 @@ df_ed <- eventReactive(input$calculate_Butn, {
     mutate(Lac_of_fit_Test = map(Lac_of_fit_p, ~sig_test(.x, p = lac_p, sign = ">")),
            Neills_Test = map(Neills_Test_p, ~sig_test(.x, p = nell_p, sign = ">")),
            No_Effect_Test = map(No_Effect_Test_p, ~sig_test(.x, p = neffect_p, sign = "<")),
-           Para_Test = map(Para_Info, ~para_sig_test(.x, p = para0_p)))
+           Para_Test = map(Para_Info, ~para_sig_test(.x, p = para0_p)),
+           f_related = map(Para_Info, f_related)) %>% 
+    unnest(f_related)
   colnames(model_drc)[n_var+1] <- "RawData"
   
   # ED estimation method
   if (ed_methods == 'serra_greco_method') {
     model_drc <- model_drc %>% 
+      mutate(Method = "Serra-Greco") %>% 
       mutate(ED_info = purrr::pmap(list(RawData), compute_ed_SG, bp = bp, fct = fctList_f, ed50_type = ed50_type, minidose = mini_dose)) %>% 
       unnest(ED_info)
   } else {
     model_drc <- model_drc %>% 
-      mutate(ED_info = purrr::pmap(list(RawData), compute_ed_Std, bp = bp, fct = fctList_f, ed50_type = ed50_type, minidose = mini_dose)) %>% 
+      mutate(Method = "Ritz-Gerhard") %>% 
+      mutate(ED_info = purrr::pmap(list(RawData), compute_ed_Std, bp = bp, fct = fctList_f, ed50_type = ed50_type, minidose = mini_dose, c = c, d = d)) %>% 
       unnest(ED_info)
   }
   
@@ -391,88 +395,119 @@ df_ed_exp <- reactive({
   ed_methods <- isolate({input$ed_methods})
   ed50_type <- isolate({input$ed50_type})
   # variable names
-  if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  if (ed_methods == 'serra_greco_method') {
-    if (any(c("Brain-Cousens", "beta") %in% df_ed()$Model)) {
-      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24), (n_var+27):(n_var+33)) 
-      colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
-                 "Monotonicity", "SG_Response_at_ED50", "SG_Low_ED50_Mean", "SG_Low_ED50_LowerBound", "SG_Low_ED50_UpperBound", 
-                 "SG_High_ED50_Mean", "SG_High_ED50_LowerBound", "SG_High_ED50_UpperBound")
-    } else {
-      selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24), (n_var+27):(n_var+30))
-      colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
-                 "Monotonicity", "SG_Response_at_ED50", "SG_ED50_Mean", "SG_ED50_LowerBound", "SG_ED50_UpperBound")
-    }
-  } else {
-    selected_var <- c(selected_var, (n_var+11), (n_var+18):(n_var+21), (n_var+24):(n_var+29))
-    colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", 
-               "Monotonicity", "RG_Response_at_ED50", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50_LowerBound", "RG_ED50_UpperBound")
-  }
-  
+  if (n_var != 0) { selected_var <- c(1:n_var, (n_var+11)) } else {selected_var <- NULL}
+  # ed related
+  selected_var <- c(selected_var, (n_var+18):(n_var+21), (n_var+26), (n_var+29):(n_var+48))
+  colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", "Method", 
+             "Monotonicity", "Maximum_Response", "Minimum_Response", "Start_Response", "M_Response", "Response_at_Low_ED\u2085\u2080", "Response_at_High_ED\u2085\u2080", 
+             "Low_ED\u2085\u2080_Mean", "Low_ED\u2085\u2080_SE", "Low_ED\u2085\u2080_LowerBound", "Low_ED\u2085\u2080_UpperBound", 
+             "High_ED\u2085\u2080_Mean", "High_ED\u2085\u2080_SE", "High_ED\u2085\u2080_LowerBound", "High_ED\u2085\u2080_UpperBound",
+             "LDS_Mean", "LDS_SE", "LDS_LowerBound", "LDS_UpperBound", "M")
+  # RM method
   if (ed50_type == "absolute") {
-    if (ed_methods == 'serra_greco_method') { 
-      selected_var <- c(selected_var, (n_var+38):(n_var+43))
-    } else {
-      selected_var <- c(selected_var, (n_var+35):(n_var+40))
-    }
-    colnm <- c(colnm, "RM_ED50_Mean", "RM_ED50_SD", "RM_ED50_CV", "RM_ED50_SE", "RM_ED50_LowerBound", "RM_ED50_UpperBound")
+    selected_var <- c(selected_var, (n_var+49):(n_var+54))
+    colnm <- c(colnm, "RM_ED\u2085\u2080_Mean", "RM_ED\u2085\u2080_SD", "RM_ED\u2085\u2080_CV", "RM_ED\u2085\u2080_SE", "RM_ED\u2085\u2080_LowerBound", "RM_ED\u2085\u2080_UpperBound")
   }
+  # f values
+  if (any(c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig") %in% df_ed()$Model)) {
+    selected_var <- c(selected_var, (n_var+22):(n_var+25)) 
+  }
+  colnm <- c(colnm, "f", "f_p_value", "f_LowerBound", "f_UpperBound")
+  
   df_temp <- df_ed()[ , selected_var]
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
   return(df_temp)
 })
 
 ## tables for display
-ED50_table <- reactive({
+# low ED50s for monotonic curves
+ED50_table_Monotonic <- reactive({
+  
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
   ed50_type <- isolate({input$ed50_type})
+  
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  if (ed_methods == 'serra_greco_method') {
-    selected_var <- c(selected_var, 
-                      (n_var+27):(n_var+30)) # ED50 - left
-    if (any(c("Brain-Cousens", "beta") %in% df_ed()$Model)) {
-      selected_var <- c(selected_var, 
-                        (n_var+31):(n_var+33)) # ED50 - right
-      colnm <- c("Response at ED50", "Low ED50 Mean", "Low ED50 Lower Bound", "Low ED50 Upper Bound", "High ED50 Mean", "High ED50 Lower Bound", "High ED50 Upper Bound")
-    } else {
-      colnm <- c("Response at ED50", "ED50 Mean", "ED50 Lower Bound", "ED50 Upper Bound")
-    }
-    
-    df_temp <- df_ed()[ , selected_var]
-    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
-  } else {
-    selected_var <- c(selected_var, 
-                      (n_var+25):(n_var+29)) # ED50
-    df_temp <- df_ed()[ , selected_var]
-    colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Response at ED50", "ED50 Mean", "ED50 SE", "ED50 Lower Bound", "ED50 Upper Bound")
-  }
-  df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), ~ map_chr(.x, display_format)))
-  # df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
+  
+  # low ED50s for monotonic curves
+  selected_var <- c(selected_var, (n_var+26), (n_var+34), (n_var+36):(n_var+39))
+  df_temp <- df_ed() %>% filter(Model %in% c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II")) %>% dplyr:: select(selected_var)
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Method", "Response at ED\u2085\u2080", "ED\u2085\u2080 Mean", "ED\u2085\u2080 SE", "ED\u2085\u2080 Lower Bound", "ED\u2085\u2080 Upper Bound")
+  
+  # change the format of digit display
+  df_temp <- df_temp %>% mutate(across((n_var+2):ncol(df_temp), ~ map_chr(.x, display_format)))
+
   return(df_temp)
+  
 })
+
+# both low&high ED50s for biphasic curves
+ED50_table_Biphasic <- reactive({
+  req(df_ed())
+  n_var <- isolate({data_values$n_var})
+  ed_methods <- isolate({input$ed_methods})
+  ed50_type <- isolate({input$ed50_type})
+  
+  # variable names
+  if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
+  
+  # low ED50s for biphasic curves
+  if (input$bi_ed == "low_ed") {
+    selected_var <- c(selected_var, (n_var+26), (n_var+34), (n_var+36):(n_var+39))
+    colnms <- c("Method", "Response at Low ED\u2085\u2080", "Low ED\u2085\u2080 Mean", "Low ED\u2085\u2080 SE", "Low ED\u2085\u2080 Lower Bound", "Low ED\u2085\u2080 Upper Bound")
+  }
+  # high ED50s for biphasic curves
+  if (input$bi_ed == "high_ed") {
+    selected_var <- c(selected_var, (n_var+26), (n_var+35), (n_var+40):(n_var+43))
+    colnms <- c("Method", "Response at High ED\u2085\u2080", "High ED\u2085\u2080 Mean", "High ED\u2085\u2080 SE", "High ED\u2085\u2080 Lower Bound", "High ED\u2085\u2080 Upper Bound")
+  }
+  # LDS for biphasic curves
+  if (input$bi_ed == "lds") {
+    selected_var <- c(selected_var, (n_var+26), (n_var+32), (n_var+44):(n_var+47))
+    colnms <- c("Method", "Response at LDS", "LDS Mean", "LDS SE", "LDS Lower Bound", "LDS Upper Bound")
+  }
+  # M for biphasic curves
+  if (input$bi_ed == "m") {
+    selected_var <- c(selected_var, (n_var+26), (n_var+33), (n_var+48))
+    colnms <- c("Method", "Response at M", "M (Maximum Stimulation/Inhibition)")
+  }
+  # f for biphasic curves
+  if (input$bi_ed == "f") {
+    selected_var <- c(selected_var, (n_var+26), (n_var+22):(n_var+25))
+    colnms <- c("Method", "f", "p-value (f=0)", "f Lower Bound", "f Upper Bound")
+  }
+  
+  df_temp <- df_ed() %>% filter(Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig")) %>% dplyr:: select(selected_var)
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnms
+  # change the format of digit display
+  df_temp <- df_temp %>% mutate(across((n_var+2):ncol(df_temp), ~ map_chr(.x, display_format)))
+  
+  return(df_temp)
+  
+})
+
 
 RM_ED50_table <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
   ed_methods <- isolate({input$ed_methods})
+  
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
-  if (ed_methods == 'serra_greco_method') {
-    selected_var <- c(selected_var, (n_var+34):(n_var+35), (n_var+38):(n_var+39))
-  } else {
-    selected_var <- c(selected_var, (n_var+30):(n_var+31), (n_var+34):(n_var+35))
-  }
+  
+  # ED means of RM method
+  selected_var <- c(selected_var, (n_var+49):(n_var+50), (n_var+53):(n_var+54))
+
   df_temp <- df_ed()[ , selected_var]
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED\u2085\u2080 Mean", "ED\u2085\u2080 SD", "ED\u2085\u2080 Lower Bound", "ED\u2085\u2080 Upper Bound")
   df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), ~ map_chr(.x, display_format)))
-  #df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), display_format))
-  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED50 Mean", "ED50 SD", "ED50 Lower Bound", "ED50 Upper Bound")
+
   return(df_temp)
 })
 
-
+# Statistical tests
 Stats_table <- reactive({
   req(df_ed())
   n_var <- isolate({data_values$n_var})
@@ -501,8 +536,12 @@ output$tb_stats <- DT::renderDataTable({
   Stats_table()
 })
 
-output$tb_ed <- DT::renderDataTable({
-  ED50_table()
+output$tb_ed_mono <- DT::renderDataTable({
+  ED50_table_Monotonic()
+})
+
+output$tb_ed_bi <- DT::renderDataTable({
+  ED50_table_Biphasic()
 })
 
 output$tb_ed_rm <- DT::renderDataTable({
@@ -561,42 +600,61 @@ output$biphasicmodels <- renderUI({
 output$ed50_results <- renderUI({
   req(df_ed())
   tagList(
-    list(
-      h5(HTML(paste0("ED", tags$sub("50"), " Estimation Table")), align = 'center'),
-      div(style = "margin-top: -10px"),
-      hr(),
-      div(style = "margin-top: -10px"),
-      DT::dataTableOutput("tb_ed") %>% shinycssloaders::withSpinner(),
-      conditionalPanel(condition = "input.ed50_type == 'Absolute' && input.two_point_method == true",
-                       div(style = "margin-top: 20px"),
-                       h5(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-and-Muench Method")), align = 'center'),
-                       div(style = "margin-top: -10px"),
-                       hr(),
-                       div(style = "margin-top: -10px"),
-                       DT::dataTableOutput("tb_ed_rm") %>% shinycssloaders::withSpinner(),
-      ),
-      div(style = "margin-top: 20px"),
-      h5("Model Assessment Results", align = 'center'),
-      div(style = "margin-top: -10px"),
-      hr(),
-      div(style = "margin-top: -10px"),
-      DT::dataTableOutput("tb_stats") %>% shinycssloaders::withSpinner(),
-      tags$b("Note:"),
-      #      p(HTML(paste0("1. The estimated ED", tags$sub("50"), " values with a ", tags$span("'*'", style = "font-size: 20px; background-color: #E6F2FF"), " indicate the ED", tags$sub("50"), 
-      #                    " is bracketed on one side by only a single point; in this case the ED", tags$sub("50"), 
-      #                    " is estimated by the", em("'Reed and Muench method'"), " (Ramakrishnan,", em("World J Virol"), 
-      #                    ", 2016). If you have many values with asterisks you should consider using a different concentration range."))),
-      p(HTML(paste0("To prevent over-fitting, we highly recommand you to choose the models based on your own experiment setup, 
+    if (any(df_ed()$Model %in% c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II"))) {
+      tagList(
+        h5(HTML(paste0("ED", tags$sub("50"), " Estimation Table (Monotonic Curves)")), align = 'center'),
+        div(style = "margin-top: -10px"),
+        hr(),
+        div(style = "margin-top: -10px"),
+        DT::dataTableOutput("tb_ed_mono") %>% shinycssloaders::withSpinner()
+      )
+    },
+    if (any(df_ed()$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+      tagList(
+        h5(HTML(paste0("ED", tags$sub("50"), " Estimation Table (Biphasic Curves)")), align = 'center'),
+        div(style = "margin-top: -10px"),
+        hr(),
+        radioButtons(inputId = "bi_ed",
+                     label = NULL, 
+                     choiceNames = list(HTML(paste0("Low ED", tags$sub("50"), "&nbsp;")), 
+                                        HTML(paste0("High ED", tags$sub("50"), "&nbsp;")),
+                                        HTML("LDS&nbsp;"), HTML("M (Maximum Stimulation/Inhibition)&nbsp;"), "f (Hormetic factor)"),
+                     choiceValues = list("low_ed", "high_ed", "lds", "m", "f"),
+                     selected = "low_ed",
+                     inline = TRUE), 
+        div(style = "margin-top: -10px"),
+        DT::dataTableOutput("tb_ed_bi") %>% shinycssloaders::withSpinner()
+      )
+    },
+    conditionalPanel(condition = "input.ed50_type == 'Absolute' && input.two_point_method == true",
+                     div(style = "margin-top: 20px"),
+                     h5(HTML(paste0("ED", tags$sub("50"), " Estimation - Reed-and-Muench Method")), align = 'center'),
+                     div(style = "margin-top: -10px"),
+                     hr(),
+                     div(style = "margin-top: -10px"),
+                     DT::dataTableOutput("tb_ed_rm") %>% shinycssloaders::withSpinner()
+    ),
+    div(style = "margin-top: 20px"),
+    h5("Model Assessment Results", align = 'center'),
+    div(style = "margin-top: -10px"),
+    hr(),
+    div(style = "margin-top: -10px"),
+    DT::dataTableOutput("tb_stats") %>% shinycssloaders::withSpinner(),
+    tags$b("Note:"),
+    #      p(HTML(paste0("1. The estimated ED", tags$sub("50"), " values with a ", tags$span("'*'", style = "font-size: 20px; background-color: #E6F2FF"), " indicate the ED", tags$sub("50"), 
+    #                    " is bracketed on one side by only a single point; in this case the ED", tags$sub("50"), 
+    #                    " is estimated by the", em("'Reed and Muench method'"), " (Ramakrishnan,", em("World J Virol"), 
+    #                    ", 2016). If you have many values with asterisks you should consider using a different concentration range."))),
+    p(HTML(paste0("To prevent over-fitting, we highly recommand you to choose the models based on your own experiment setup, 
                     if you let the app to choose the best models for you, 
                     the best models reported are selected from the drc analysis (Ritz C,", 
-                    em("et al."), ", ", em("PLoS One"), ", 2015), based on the criteria you choose on the left."))),
-      p(tags$b("Reference:")),
-      p(em("Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One. 10(12)")), 
-      div(style = "margin-top: -15px"), 
-      p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
-      div(style = "margin-top: -15px"), 
-      p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86"))
-    )
+                  em("et al."), ", ", em("PLoS One"), ", 2015), based on the criteria you choose on the left."))),
+    p(tags$b("Reference:")),
+    p(em("Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One. 10(12)")), 
+    div(style = "margin-top: -15px"), 
+    p(em("Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933")),
+    div(style = "margin-top: -15px"), 
+    p(em("Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol. 5: 85–86"))
   )
 })
 
@@ -672,16 +730,35 @@ output$plot_appearance_ui <- renderUI({
 
 
 #### Plot_ED&Responses_Line_UI -----------------------------------------------------------------------------
+
+#### ED50 & Max/Min
 output$plot_resline_ui <- renderUI({
-  wellPanel(h6("Show the ED values and the corresponding responses："),
-            div(style = "display: inline-block; vertical-align: top;",
-                checkboxInput(inputId = "plot_ed50_ck", label = HTML(paste0("ED", tags$sub("50"))), value = FALSE))#,
-            #div(style = "display: inline-block; vertical-align: top;",
-            #    checkboxInput(inputId = "plot_resline_ck", label = "Max & Min Responses", value = FALSE)),
-            #textInput(inputId = "bp", label = "Minimum dose:", value = "default")
+  wellPanel(h6("Show the ED values and the corresponding responses："), 
+            div(style = "display: inline-block; vertical-align: top;", 
+                checkboxInput(inputId = "plot_ed50_ck", label = HTML(paste0("ED", tags$sub("50"))), value = FALSE)), 
+            uiOutput(outputId = "lds_m"), 
+            div(), 
+            div(style = "display: inline-block; vertical-align: top;margin-top: -15px;", 
+                checkboxInput(inputId = "plot_resline_ck", label = "Max & Min Responses", value = FALSE)), 
+            div(), 
+            div(style = "display: inline-block; vertical-align: top;margin-top: -15px;", 
+                checkboxInput(inputId = "plot_ci_ck", label = "Confidence Intervals", value = FALSE))
+            
   )
 })
 
+#### Biphasic LDS & M
+output$lds_m <- renderUI({
+  req(data_scat())
+  if (any(data_scat()$Biphasic == "Y")) {
+    tagList(
+      div(), 
+      div(style = "display: inline-block; vertical-align: top; margin-top: -15px;", 
+          checkboxInput(inputId = "plot_lds_m_ck", label = "LDS & M", value = FALSE)
+      )
+    )
+  }
+})
 
 #### Download UI -------------------------------------------------------------------------------------------
 output$dl <- renderUI({
@@ -793,6 +870,7 @@ data_predct <- eventReactive(input$plot_Butn_1, {
 #### Default Plot -------------------------------------------------------------------------------------------
 
 L_P <- reactive({
+  
   n_var <- ncol(data_predct())-2
   
   color_var <- isolate({input$line_color_v})
@@ -821,13 +899,8 @@ L_P <- reactive({
   # Annotation dataframe
   ed_methods <- isolate({input$ed_methods})
   ed50_type <- isolate({input$ed50_type})
-  if (n_var == 0) { selected_var <- NULL } else { selected_var <- c(1:n_var)}
-  if (ed_methods == 'serra_greco_method') {
-    selected_var <- c(selected_var, (n_var+25):(n_var+33))
-  } else {
-    selected_var <- c(selected_var, (n_var+25):(n_var+29))
-  }
-  anno_df <- df_ed()[ , selected_var]
+  if (n_var == 0) { selected_var <- c((n_var+30):(n_var+48)) } else { selected_var <- c(1:n_var, (n_var+30):(n_var+48))}
+  anno_df <- isolate({df_ed()})[ , selected_var]
   anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
   
   if (n_var == 0) {
@@ -844,26 +917,50 @@ L_P <- reactive({
     }
     # ED50
     if (input$plot_ed50_ck == TRUE) {
-      if (ed_methods == 'serra_greco_method') {
+      p <- p + 
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = ED50_l_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        geom_hline(data = anno_df, aes(yintercept = ED50_r_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        # ed lines - left
+        geom_vline(data = anno_df, aes(xintercept = ED50_l_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+        # ed lines - right
+        geom_vline(data = anno_df, aes(xintercept = ED50_r_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+      
+      if (input$plot_ci_ck == TRUE) {
         p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
           # ed lines - left
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50_l), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_l), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_l), linetype = "dotted", alpha = 0.5, color = clr) +
+          geom_vline(data = anno_df, aes(xintercept = ED50_l_L), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = ED50_l_U), linetype = "dotted", alpha = 0.5, color = clr) +
           # ed lines - right
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50_r), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r), linetype = "dotted", alpha = 0.5, color = clr)
-      } else {
+          geom_vline(data = anno_df, aes(xintercept = ED50_r_L), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = ED50_r_U), linetype = "dotted", alpha = 0.5, color = clr)
+      }
+      
+    }
+    # Max & Min
+    if (input$plot_resline_ck == TRUE) {
+      p <- p +
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = max_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+        geom_hline(data = anno_df, aes(yintercept = min_res), linetype = "longdash", alpha = 0.5, color = clr)
+    }
+    # LDS & M
+    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+      if (input$plot_lds_m_ck == TRUE) {
         p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = RG_ED50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
-          # ed lines
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50L), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50U), linetype = "dotted", alpha = 0.5, color = clr)
+          # LDS
+          geom_hline(data = anno_df, aes(yintercept = start_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = LDS_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+          # M
+          geom_hline(data = anno_df, aes(yintercept = m_res), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = M), linetype = "longdash", alpha = 0.5, color = clr)
+        
+        if (input$plot_ci_ck == TRUE) {
+          p <- p +
+            # LDS
+            geom_vline(data = anno_df, aes(xintercept = LDS_L), linetype = "dotted", alpha = 0.5, color = clr) + 
+            geom_vline(data = anno_df, aes(xintercept = LDS_U), linetype = "dotted", alpha = 0.5, color = clr)
+        }
       }
     }
     
@@ -885,28 +982,52 @@ L_P <- reactive({
     }
     # ED50
     if (input$plot_ed50_ck == TRUE) {
-      if (ed_methods == 'serra_greco_method') {
+      p <- p +
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = ED50_l_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        geom_hline(data = anno_df, aes(yintercept = ED50_r_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        # ed lines - left
+        geom_vline(data = anno_df, aes(xintercept = ED50_l_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        # ed lines - right
+        geom_vline(data = anno_df, aes(xintercept = ED50_r_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+      
+      if (input$plot_ci_ck == TRUE) {
         p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = SG_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
           # ed lines - left
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) +
+          geom_vline(data = anno_df, aes(xintercept = ED50_l_L, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = ED50_l_U, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) +
           # ed lines - right
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50L_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = SG_ED50U_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
-      } else {
-        p <- p +
-          # response lines
-          geom_hline(data = anno_df, aes(yintercept = RG_ED50_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          # ed lines
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50L, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = RG_ED50U, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+          geom_vline(data = anno_df, aes(xintercept = ED50_r_L, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = ED50_r_U, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
       }
     }
+    # Max & Min
+    if (input$plot_resline_ck == TRUE) {
+      p <- p +
+        # response lines
+        geom_hline(data = anno_df, aes(yintercept = max_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        geom_hline(data = anno_df, aes(yintercept = min_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+    }
+    # LDS & M
+    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+      if (input$plot_lds_m_ck == TRUE) {
+        p <- p +
+          # LDS
+          geom_hline(data = anno_df, aes(yintercept = start_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = LDS_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) +
+          # M
+          geom_hline(data = anno_df, aes(yintercept = m_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = anno_df, aes(xintercept = M, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+        
+        if(input$plot_ci_ck == TRUE) {
+          p <- p +
+            # LDS
+            geom_vline(data = anno_df, aes(xintercept = LDS_L, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+            geom_vline(data = anno_df, aes(xintercept = LDS_U, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        }
+      }
+    }
+    
   }
   
   if (n_var >= 3) {
@@ -936,8 +1057,6 @@ L_P <- reactive({
   p
   
 })
-
-#### Show the EDs and related responses --------------------------------------------------------------------
 
 
 
@@ -979,7 +1098,7 @@ output$dl_report <- downloadHandler(
     file.copy("reports/Report_Default.Rmd", tempReport, overwrite = TRUE)
     
     # Set up parameters to pass to Rmd document
-    params_1 <- list(table_ed50 = ED50_table(),
+    params_1 <- list(table_mono = ED50_table_Monotonic(),
                      table_rm = RM_ED50_table(),
                      table_stats = Stats_table(),
                      ed50_type = input$ed50_type, 
@@ -993,7 +1112,10 @@ output$dl_report <- downloadHandler(
                      ScatterPlot_dataframe = data_scat(),
                      Mean_SD_dataframe = data_m_sd(),
                      Plot_appearance = input$plot_appearance,
-                     plot_ed50_ck = input$plot_ed50_ck,
+                     plot_ed50_ck = input$plot_ed50_ck, 
+                     plot_lds_m_ck = input$plot_lds_m_ck, 
+                     plot_resline_ck = input$plot_resline_ck,
+                     plot_ci_ck = input$plot_ci_ck,
                      label_x_axis = data_values$x,
                      label_y_axis = data_values$y
     )

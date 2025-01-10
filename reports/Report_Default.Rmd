@@ -8,13 +8,16 @@ output:
      collapsed: false
      smooth_scroll: false
 params:
-  table_ed50: NA
+  table_mono: NA
   table_rm: NA
   table_stats: NA
   ed50_type: NA
   ed_methods: NA
   two_point_method: NA
   plot_ed50_ck: NA
+  plot_lds_m_ck: NA
+  plot_resline_ck: NA
+  plot_ci_ck: NA
   n_var: NA
   color_var: NA
   facet_var_row: NA
@@ -72,7 +75,7 @@ caption {
 
 ### Best-Fit Model and Model Assessment
 The selected best-fit model and the results of statistical tests are listed below.
-```{r echo = FALSE, results='asis'}
+```{r echo = FALSE, results = 'asis'}
 # Generate the table with kable and style it with kableExtra
 kable(params$table_stats, format = "html") %>% 
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
@@ -82,18 +85,75 @@ kable(params$table_stats, format = "html") %>%
 
 ### ED~50~ Table
 The chosen ED estimation method is `r if (params$ed_methods == 'stdd_method') {paste0("Ritz-Gerhard Method")} else {paste0("Serra-Greco Method")}`. The ED~50~s estimated by the app are listed below. 
-```{r echo = FALSE, results='asis'}
+```{r message = FALSE, warning = FALSE, echo = FALSE, results = 'asis'}
 
 # Generate the table with kable and style it with kableExtra
-## ED50 table
-kable(params$table_ed50, format = "html", caption = "ED~50~ Estimation Table") %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
-if (params$ed50_type == "Absolute" & params$two_point_method == TRUE) {
-  # Generate the table with kable and style it with kableExtra
-  kable(params$table_rm, format = "html", caption = "ED~50~ Estimation Table - Reed-and-Muench Method") %>% 
+df_all <- params$ED_related
+n_var <- params$n_var
+
+## ED50 table - Monotonic curves
+if (any(df_all$Model %in% c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II"))) {
+  kable(params$table_mono, format = "html", caption = "- Monotonic Curves") %>% 
     kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
 }
 
+## ED50 table - Biphasic curves - Low ED50s
+if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {df_bi <- df_all %>% filter(Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))}
+if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+  if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
+  bi_low_ed50 <- df_bi[ , c(selected_var, (n_var+12), (n_var+14):(n_var+17))]
+  colnames(bi_low_ed50)[(n_var+1):ncol(bi_low_ed50)] <- c("Response at Low ED\u2085\u2080", "Low ED\u2085\u2080 Mean", "Low ED\u2085\u2080 SE", "Low ED\u2085\u2080 Lower Bound", "Low ED\u2085\u2080 Upper Bound")
+  bi_low_ed50 <- bi_low_ed50 %>% mutate(across((n_var+1):ncol(bi_low_ed50), ~ map_chr(.x, display_format)))
+  kable(bi_low_ed50, format = "html", caption = "- Biphasic Curves (Low ED~50~)") %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+}
+
+## ED50 table - Biphasic curves - High ED50s
+if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+  if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
+  bi_high_ed50 <- df_bi[ , c(selected_var, (n_var+13), (n_var+18):(n_var+21))]
+  colnames(bi_high_ed50)[(n_var+1):ncol(bi_high_ed50)] <- c("Response at High ED\u2085\u2080", "High ED\u2085\u2080 Mean", "High ED\u2085\u2080 SE", "High ED\u2085\u2080 Lower Bound", "High ED\u2085\u2080 Upper Bound")
+  bi_high_ed50 <- bi_high_ed50 %>% mutate(across((n_var+1):ncol(bi_high_ed50), ~ map_chr(.x, display_format)))
+  kable(bi_high_ed50, format = "html", caption = "- Biphasic Curves (High ED~50~)") %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+}
+
+## ED50 table - Biphasic curves - LDS
+if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+  if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
+  bi_lds <- df_bi[ , c(selected_var, (n_var+10), (n_var+22):(n_var+25))]
+  colnames(bi_lds)[(n_var+1):ncol(bi_lds)] <- c("Response at LDS", "LDS Mean", "LDS SE", "LDS Lower Bound", "LDS Upper Bound")
+  bi_lds <- bi_lds %>% mutate(across((n_var+1):ncol(bi_lds), ~ map_chr(.x, display_format)))
+  kable(bi_lds, format = "html", caption = "- Biphasic Curves (LDS)") %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+}
+
+## ED50 table - Biphasic curves - M
+if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+  if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
+  bi_m <- df_bi[ , c(selected_var, (n_var+11), (n_var+26))]
+  colnames(bi_m)[(n_var+1):ncol(bi_m)] <- c("Response at M", "M (Maximum Stimulation/Inhibition)")
+  bi_m <- bi_m %>% mutate(across((n_var+1):ncol(bi_m), ~ map_chr(.x, display_format)))
+  kable(bi_m, format = "html", caption = "- Biphasic Curves (M)") %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+}
+
+## ED50 table - Biphasic curves - f
+if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+  if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
+  bi_f <- df_bi[ , c(selected_var, (n_var+27):(n_var+30))]
+  colnames(bi_f)[(n_var+1):ncol(bi_f)] <- c("f", "p-value (f=0)", "f Lower Bound", "f Upper Bound")
+  bi_f <- bi_f %>% mutate(across((n_var+1):ncol(bi_f), ~ map_chr(.x, display_format)))
+  kable(bi_f, format = "html", caption = "- Biphasic Curves (f)") %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+}
+
+## Reed-and-Muench method
+if (params$ed50_type == "Absolute" & params$two_point_method == TRUE) {
+  # Generate the table with kable and style it with kableExtra
+  kable(params$table_rm, format = "html", caption = "- Reed-and-Muench Method") %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
+}
 
 ```
 
@@ -109,6 +169,9 @@ The dose response curve is generated by the following codes. You can further cus
    + `ed50_type`: `r params$ed50_type`  
    + `ed_methods`: `r params$ed_methods`  
    + `plot_ed50_ck`: `r params$plot_ed50_ck`  
+   + `plot_lds_m_ck`: `r params$plot_lds_m_ck`  
+   + `plot_resline_ck`: `r params$plot_resline_ck`  
+   + `plot_ci_ck`: `r params$plot_ci_ck`  
    + `legend_order`: `r params$legend_order`  
    + `plot_appearance`: `r params$Plot_appearance`  
    + `label_x_axis`: `r params$label_x_axis`  
@@ -120,7 +183,7 @@ The dose response curve is generated by the following codes. You can further cus
    + `scatterplot_dataframe`: dataframe in "**ScatterPlot_dataframe**"  
    + `mean_sd_dataframe`: dataframe in "**Mean_SD_dataframe**"  
   
-```{r}
+```{r message = FALSE, warning = FALSE}
 # Passing variables from the app to the report
 
 # Number of variables
@@ -137,6 +200,9 @@ ed_methods <- params$ed_methods
 
 # Show the ED-related lines
 plot_ed50_ck <- params$plot_ed50_ck
+plot_lds_m_ck <- params$plot_lds_m_ck
+plot_resline_ck <- params$plot_resline_ck
+plot_ci_ck <- params$plot_ci_ck
 
 # Legend order
 legend_order <- params$legend_order
@@ -165,8 +231,11 @@ mean_sd_dataframe <- params$Mean_SD_dataframe
 cbPalette <- c("#00A4FF", "#FD7FEE", "#03DFCA", "#990A3A", "#F37B63", "#05B756", "#A3FB86", "#097C91", "#015EC9","#840EAA")
 
 # Annotation dataframe
-ED_related[, (n_var+7):ncol(ED_related)] <- lapply(ED_related[, (n_var+7):ncol(ED_related)], as.numeric)
-
+ED_related[, (n_var+8):ncol(ED_related)] <- lapply(ED_related[, (n_var+8):ncol(ED_related)], as.numeric)
+colnames(ED_related)[(n_var+8):(n_var+26)] <- c("Maximum_Response", "Minimum_Response", "Start_Response", "M_Response", "Response_at_Low_ED50", "Response_at_High_ED50",
+                                                "Low_ED50_Mean", "Low_ED50_SE", "Low_ED50_LowerBound", "Low_ED50_UpperBound", 
+                                                "High_ED50_Mean", "High_ED50_SE", "High_ED50_LowerBound", "High_ED50_UpperBound",
+                                                "LDS_Mean", "LDS_SE", "LDS_LowerBound", "LDS_UpperBound", "M")
 
 if (n_var == 0) {
   # color
@@ -182,38 +251,50 @@ if (n_var == 0) {
   }
   # ED50
   if (plot_ed50_ck == TRUE) {
-    if (ed_methods == 'serra_greco_method') {
-      if (any(c("Brain-Cousens", "beta") %in% ED_related$Model)) {
-        p <- p +
-          # response lines
-          geom_hline(data = ED_related, aes(yintercept = SG_Response_at_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
-          # ed lines - left
-          geom_vline(data = ED_related, aes(xintercept = SG_Low_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_Low_ED50_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_Low_ED50_UpperBound), linetype = "dotted", alpha = 0.5, color = clr) +
-          # ed lines - right
-          geom_vline(data = ED_related, aes(xintercept = SG_High_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_High_ED50_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_High_ED50_UpperBound), linetype = "dotted", alpha = 0.5, color = clr)
-      } else {
+    p <- p +
+      # response lines
+      geom_hline(data = ED_related, aes(yintercept = Response_at_Low_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
+      geom_hline(data = ED_related, aes(yintercept = Response_at_High_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
+      # ed lines - left
+      geom_vline(data = ED_related, aes(xintercept = Low_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+      # ed lines - right
+      geom_vline(data = ED_related, aes(xintercept = High_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+    if (plot_ci_ck == TRUE) {
         p <- p + 
-          # response lines
-          geom_hline(data = ED_related, aes(yintercept = SG_Response_at_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
           # ed lines - left
-          geom_vline(data = ED_related, aes(xintercept = SG_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_ED50_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_ED50_UpperBound), linetype = "dotted", alpha = 0.5, color = clr)
-      }
-    } else {
-      p <- p +
-        # response lines
-        geom_hline(data = ED_related, aes(yintercept = RG_Response_at_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
-        # ed lines
-        geom_vline(data = ED_related, aes(xintercept = RG_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
-        geom_vline(data = ED_related, aes(xintercept = RG_ED50_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
-        geom_vline(data = ED_related, aes(xintercept = RG_ED50_UpperBound), linetype = "dotted", alpha = 0.5, color = clr)
+          geom_vline(data = ED_related, aes(xintercept = Low_ED50_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = ED_related, aes(xintercept = Low_ED50_UpperBound), linetype = "dotted", alpha = 0.5, color = clr) +
+          # ed lines - right
+          geom_vline(data = ED_related, aes(xintercept = High_ED50_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
+          geom_vline(data = ED_related, aes(xintercept = High_ED50_UpperBound), linetype = "dotted", alpha = 0.5, color = clr)
     }
   }
+  # Max & Min
+    if (plot_resline_ck == TRUE) {
+      p <- p +
+        # response lines
+        geom_hline(data = ED_related, aes(yintercept = Maximum_Response), linetype = "longdash", alpha = 0.5, color = clr) + 
+        geom_hline(data = ED_related, aes(yintercept = Minimum_Response), linetype = "longdash", alpha = 0.5, color = clr)
+    }
+    # LDS & M
+    if (any(ED_related$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+      if (plot_lds_m_ck == TRUE) {
+        p <- p +
+          # LDS
+          geom_hline(data = ED_related, aes(yintercept = Start_Response), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = ED_related, aes(xintercept = LDS_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+          # M
+          geom_hline(data = ED_related, aes(yintercept = M_Response), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = ED_related, aes(xintercept = M), linetype = "longdash", alpha = 0.5, color = clr)
+        
+        if (input$plot_ci_ck == TRUE) {
+          p <- p +
+            # LDS
+            geom_vline(data = ED_related, aes(xintercept = LDS_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
+            geom_vline(data = ED_related, aes(xintercept = LDS_UpperBound), linetype = "dotted", alpha = 0.5, color = clr)
+        }
+      }
+    }
   
  } else {
   # color
@@ -233,38 +314,51 @@ if (n_var == 0) {
   }
   # ED50
   if (plot_ed50_ck == TRUE) {
-    if (ed_methods == 'serra_greco_method') {
-      if (any(c("Brain-Cousens", "beta") %in% ED_related$Model)) {
+    p <- p + 
+      # response lines
+      geom_hline(data = ED_related, aes(yintercept = Response_at_Low_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+      geom_hline(data = ED_related, aes(yintercept = Response_at_High_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+      # ed lines - left
+      geom_vline(data = ED_related, aes(xintercept = Low_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+      # ed lines - right
+      geom_vline(data = ED_related, aes(xintercept = High_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+    
+    if (plot_ci_ck == TRUE) {
         p <- p + 
-          # response lines
-          geom_hline(data = ED_related, aes(yintercept = SG_Response_at_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
           # ed lines - left
-          geom_vline(data = ED_related, aes(xintercept = SG_Low_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_Low_ED50_LowerBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_Low_ED50_UpperBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) +
+          geom_vline(data = ED_related, aes(xintercept = Low_ED50_LowerBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = ED_related, aes(xintercept = Low_ED50_UpperBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) +
           # ed lines - right
-          geom_vline(data = ED_related, aes(xintercept = SG_High_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_High_ED50_LowerBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_High_ED50_UpperBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
-      } else {
-        p <- p + 
-          # response lines
-          geom_hline(data = ED_related, aes(yintercept = SG_Response_at_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          # ed lines - left
-          geom_vline(data = ED_related, aes(xintercept = SG_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_ED50_LowerBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-          geom_vline(data = ED_related, aes(xintercept = SG_ED50_UpperBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+          geom_vline(data = ED_related, aes(xintercept = High_ED50_LowerBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+          geom_vline(data = ED_related, aes(xintercept = High_ED50_UpperBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
       }
-    } else {
+  }
+  # Max & Min
+    if (plot_resline_ck == TRUE) {
       p <- p +
         # response lines
-        geom_hline(data = ED_related, aes(yintercept = RG_Response_at_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-        # ed lines
-        geom_vline(data = ED_related, aes(xintercept = RG_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-        geom_vline(data = ED_related, aes(xintercept = RG_ED50_LowerBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
-        geom_vline(data = ED_related, aes(xintercept = RG_ED50_UpperBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        geom_hline(data = ED_related, aes(yintercept = Maximum_Response, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        geom_hline(data = ED_related, aes(yintercept = Minimum_Response, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
     }
-  }
+    # LDS & M
+    if (any(ED_related$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+      if (plot_lds_m_ck == TRUE) {
+        p <- p +
+          # LDS
+          geom_hline(data = ED_related, aes(yintercept = Start_Response, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = ED_related, aes(xintercept = LDS_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) +
+          # M
+          geom_hline(data = ED_related, aes(yintercept = M_Response, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+          geom_vline(data = ED_related, aes(xintercept = M, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+        
+        if(plot_ci_ck == TRUE) {
+          p <- p +
+            # LDS
+            geom_vline(data = ED_related, aes(xintercept = LDS_LowerBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5) + 
+            geom_vline(data = ED_related, aes(xintercept = LDS_UpperBound, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "dotted", alpha = 0.5)
+        }
+      }
+    }
 }
 
 # Facet_wrap/Facet_grid
@@ -295,7 +389,7 @@ p <- p +
 
 ```
 
-```{r echo = FALSE, out.width = '100%', fig.align = "center"}
+```{r message = FALSE, warning = FALSE, echo = FALSE, out.width = '100%', fig.align = "center"}
 p
 ```
 

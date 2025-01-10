@@ -79,7 +79,7 @@ m_select_new <- function(df_temp, fctList_monotnc, fctList_biphsc, const){
   ## Change the function name
   df_fct <- data.frame(
     Fct = c("LL.4", "LL.5", "W1.4", "W2.4", "BC.5", "CRS.5a", "CRS.5b", "CRS.5c", "UCRS.5a", "UCRS.5b", "UCRS.5c", "CRS.6", "UCRS.6", "DRC.beta", NA),
-    Model = c("Log-logistic\n(4 paras)", "Log-logistic\n(5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", rep("Cedergreen-Ritz-Streibig", 8), "beta", NA)
+    Model = c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", rep("Cedergreen-Ritz-Streibig", 8), "beta", NA)
   )
   df_ret <- df_ret %>% left_join(df_fct, by = "Fct")
   
@@ -130,10 +130,15 @@ control_variance <- function(model, constant_variance, training_dose){
 }
 
 # Curve df and ED50
-compute_ed <- function(opt_mod, rl = 1.349, dataframe, 
-                       constantVar, conf_interval, interval_type, bp, minidose, ed50_type) {
+compute_ed <- function(opt_mod, dataframe, 
+                       conf_interval, bp, minidose, ed50_type) {
   # dataframe <- Data[1, ] %>% unnest()
   # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = LL.4(fixed = c(NA, 0, NA, NA)))
+  # opt_mod <- drm(Response ~ Conc, data = dataframe, fct = BC.5(fixed = c(NA, 0, NA, NA, NA)))
+  # dataframe <- df
+  # opt_mod <- tempObj
+  # minidose <- mini_dose
+  # conf_interval <- 0.95
   # plot(opt_mod)
   
   respns <- dataframe$Response
@@ -141,7 +146,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
   fctName <- summary(opt_mod)[["fctName"]]
   
   if(is.na(fctName)) {
-    bmd_val <- matrix(NA, 1, 12)
+    bmd_val <- matrix(NA, 1, 22) %>% as.data.frame()
   } else {
     
     # starting point - adopted from plot.drc()
@@ -155,7 +160,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
       min_dose <- min(dose)
     }
     
-    # calculate the 50% max response for ed50 estimation
+    # dose range
     doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
     if(min(dose) == 0){doseRange <- c(0, doseRange)}
     
@@ -179,7 +184,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
     
     if (monotonic_behaviour == "Flat") {
       
-      temp_res <- matrix(NA, 1, 9) %>% as.data.frame()
+      temp_res <- matrix(NA, 1, 19) %>% as.data.frame()
       
     } else {
       temp_res <- tryCatch({
@@ -193,11 +198,28 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
           doseRange_2nd <- c(which.min(conf_interval_cv[, 1]):nrow(conf_interval_cv))
         }
         
+        # minimum and maxmum responses
+        min_res <- min(conf_interval_cv[, 1])
+        max_res <- max(conf_interval_cv[, 1])
+        min_res_1 <- min(conf_interval_cv[doseRange_1st, 1])
+        max_res_1 <- max(conf_interval_cv[doseRange_1st, 1])
+        
         # calculate the half max response in the first phase under the concs tested in the experiment
         if (ed50_type == "Absolute") {
           half_resp <- 50
         } else {
-          half_resp <- max(conf_interval_cv[doseRange_1st, 1]) - (abs(max(conf_interval_cv[doseRange_1st, 1]) - min(conf_interval_cv[doseRange_1st, 1]))/2)
+          half_resp <- max_res_1-abs(max_res_1-min_res_1)/2
+        }
+        if (!(grepl("LL", fctName) || grepl("W", fctName))) {
+          if (monotonic_behaviour == "Up") {
+            start_res <- min_res_1
+            m_res <- max_res
+            if (ed50_type == "Absolute") { half_resp_2 <- NA} else { half_resp_2 <- start_res-(start_res-min_res)/2 }
+          } else {
+            start_res <- max_res_1
+            m_res <- min_res
+            if (ed50_type == "Absolute") { half_resp_2 <- NA} else { half_resp_2 <- start_res+(max_res-start_res)/2 }
+          }
         }
 
         ### SG Method - approx()
@@ -209,6 +231,7 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
         half_con_2 <- try(stats::approx(x = conf_interval_cv[doseRange_1st, 3], y = doseRange[doseRange_1st], xout = half_resp)$y)
         
         # determine the upper and lower bound by monotonicity 
+        if (inherits(half_con, "try-error")) { half_con <- NA }
         if (inherits(half_con_1, "try-error")) { half_con_1 <- NA }
         if (inherits(half_con_2, "try-error")) { half_con_2 <- NA }
         if(monotonic_behaviour == "Down"){
@@ -218,56 +241,101 @@ compute_ed <- function(opt_mod, rl = 1.349, dataframe,
           edl <- half_con_2
           edu <- half_con_1
         }
-        ## right ed50
-        half_con2 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 1], y = doseRange[doseRange_2nd], xout = half_resp)$y)
-        half_con2_1 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 2], y = doseRange[doseRange_2nd], xout = half_resp)$y)
-        half_con2_2 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 3], y = doseRange[doseRange_2nd], xout = half_resp)$y)
         
-        # determine the upper and lower bound by monotonicity 
-        if (inherits(half_con2, "try-error")) { half_con2 <- NA }
-        if (inherits(half_con2_1, "try-error")) { half_con2_1 <- NA }
-        if (inherits(half_con2_2, "try-error")) { half_con2_2 <- NA }
-        if(monotonic_behaviour == "Down"){
-          edl2 <- half_con2_2
-          edu2 <- half_con2_1
+        ## additional eds for biphasic curves
+        if (!(grepl("LL", fctName) || grepl("W", fctName))) {
+          ## ED50-related
+          if(ed50_type == "Relative") {
+            half_con2 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 1], y = doseRange[doseRange_2nd], xout = half_resp_2)$y)
+            half_con2_1 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 2], y = doseRange[doseRange_2nd], xout = half_resp_2)$y)
+            half_con2_2 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 3], y = doseRange[doseRange_2nd], xout = half_resp_2)$y)
+            if (inherits(half_con2, "try-error")) { half_con2 <- NA }
+            if (inherits(half_con2_1, "try-error")) { half_con2_1 <- NA }
+            if (inherits(half_con2_2, "try-error")) { half_con2_2 <- NA }
+          } else {
+            half_con2 <- NA
+            half_con2_1 <- NA
+            half_con2_2 <- NA
+          }
+          
+          ## LDS
+          lds <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 1], y = doseRange[doseRange_2nd], xout = start_res)$y)
+          lds_1 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 2], y = doseRange[doseRange_2nd], xout = start_res)$y)
+          lds_2 <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 3], y = doseRange[doseRange_2nd], xout = start_res)$y)
+          if (inherits(lds, "try-error")) { lds <- NA }
+          if (inherits(lds_1, "try-error")) { lds_1 <- NA }
+          if (inherits(lds_2, "try-error")) { lds_2 <- NA }
+          
+          ## final CI
+          if(monotonic_behaviour == "Down"){
+            edl2 <- half_con2_2
+            edu2 <- half_con2_1
+            ldsl <- lds_2
+            ldsu <- lds_1
+          } else {
+            edl2 <- half_con2_1
+            edu2 <- half_con2_2
+            ldsl <- lds_1
+            ldsu <- lds_2
+          }
+          
+          ## M
+          # estimation
+          m <- try(stats::approx(x = conf_interval_cv[doseRange_2nd, 1], y = doseRange[doseRange_2nd], xout = m_res)$y)
+          if (inherits(m, "try-error")) { m <- NA }
+          
         } else {
-          edl2 <- half_con2_1
-          edu2 <- half_con2_2
+          half_resp_2 <- NA
+          start_res <- NA
+          m_res <- NA
+          half_con2 <- NA
+          edl2 <- NA
+          edu2 <- NA
+          lds <- NA
+          ldsl <- NA
+          ldsu <- NA
+          m <- NA
         }
         
         # Export the info.
         temp_res <- data.frame(
-          max_res = max(conf_interval_cv[doseRange_1st, 1]), 
-          min_res = min(conf_interval_cv[doseRange_1st, 1]),
-          ED50_res = half_resp, 
-          ED50_l_Mean = half_con, ED50_l_L = edl, ED50_l_U = edu, 
-          ED50_r_Mean = half_con2, ED50_r_L = edl2, ED50_r_U = edu2
+          max_res = max_res, min_res = min_res,
+          start_res = start_res, m_res = m_res,
+          ED50_l_res = half_resp, ED50_r_res = half_resp_2, 
+          ED50_l_Mean = half_con, ED50_l_SE = NA, ED50_l_L = edl, ED50_l_U = edu, 
+          ED50_r_Mean = half_con2, ED50_r_SE = NA, ED50_r_L = edl2, ED50_r_U = edu2, 
+          LDS_Mean = lds, LDS_SE = NA, LDS_L = ldsl, LDS_U = ldsu, 
+          M = m
           )
         
       }, error = function(e) {
         print(e)
-        temp_res <- matrix(NA, 1, 9) %>% as.data.frame()
+        temp_res <- matrix(NA, 1, 19) %>% as.data.frame()
       })
       
     }
     # Export the info.
-    bmd_val <- cbind(bmd_val, temp_res)
+    bmd_val <- cbind(bmd_val, temp_res) %>% as.data.frame()
   }
-  return(as.data.frame(bmd_val))
+  
+  return(bmd_val)
   
 }
 
 # Export results
 compute_ed_SG <- function(df, fct, bp, minidose, ed50_type){
+  #df <- Data[1, ] %>% unnest()
+  #fct <- "BC.5(fixed = c(NA, 0, NA, NA, NA))"
   tempObj <- try(eval(parse(text = paste0("drm(Response ~ Conc, data = df, fct = ", fct, ")"))), silent = FALSE)
   if (!inherits(tempObj, "try-error")){
-    tempED <- compute_ed(opt_mod = tempObj, rl = 1.349, dataframe = df, 
-                         constantVar = TRUE, interval_type = "delta", conf_interval = 0.95, bp = bp, minidose, ed50_type)
+    tempED <- compute_ed(opt_mod = tempObj, dataframe = df, 
+                         conf_interval = 0.95, bp = bp, minidose = minidose, ed50_type = ed50_type)
   }else{
-    tempED <- matrix(NA, 1, 12) %>% as.data.frame()
+    tempED <- matrix(NA, 1, 22) %>% as.data.frame()
   }
-  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "SG_max_res", "SG_min_res", 
-                        "SG_ED50_res", "SG_ED50_l", "SG_ED50L_l", "SG_ED50U_l", "SG_ED50_r", "SG_ED50L_r", "SG_ED50U_r")
+  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "max_res", "min_res", "start_res", "m_res", "ED50_l_res", 
+                        "ED50_r_res", "ED50_l_Mean", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U", 
+                        "LDS_Mean", "LDS_SE", "LDS_L", "LDS_U", "M")
   return(tempED)
   
 }
@@ -292,7 +360,7 @@ RM_method <- function(df){
 RM_method_f <- function(df, ed50_type) {
   
   retMat_RM <- matrix(0, 1, 6)
-  if (ed50_type == "Absolute" && all(df$Biphasic == "N")) {
+  if (ed50_type == "Absolute") {
     Df <- df %>%
       dplyr::group_by(Conc) %>%
       dplyr::summarise(mean = mean(Response)) %>% 
@@ -369,10 +437,10 @@ RM_method_f <- function(df, ed50_type) {
 
 ## Ritz-Gerhard method ---------------------------------------------------------
 
-compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
+compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
   # df <- Data$data[[1]]
   # fct <- "W1.4(fixed = c(NA, NA, NA, NA))"
-  # fct <- "BC.5()"
+  # fct <- "BC.5(fixed = c(NA, 0, NA, NA, NA))"
   respns <- df$Response
   dose <- df$Conc
   tempObj <- try(eval(parse(text = paste0("drm(Response ~ Conc, data = df, fct = ", fct, ")"))), silent = FALSE)
@@ -393,7 +461,6 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
     
     # doseRange
     doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
-    
     
     # Export the nested data for generate plot
     ## calculate the curve interval
@@ -419,6 +486,20 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
         
       } else {
         
+        # minimum and maxmum responses
+        min_res <- min(conf_interval_cv[, 1])
+        max_res <- max(conf_interval_cv[, 1])
+        
+        # start response
+        df_para <- tidy(tempObj, conf.int = TRUE)
+        if (!"c" %in% df_para$term) { df_para <- rbind(df_para, c("c", "(Intercept)", as.numeric(c), rep(NA, 5))) }
+        if (!"d" %in% df_para$term) { df_para <- rbind(df_para, c("d", "(Intercept)", as.numeric(d), rep(NA, 5))) }
+        if (as.numeric(df_para[df_para$term =="b", 3])>0) {
+          start_res <- df_para[df_para$term =="d", 3] %>% as.numeric()
+        } else {
+          start_res <- df_para[df_para$term =="c", 3] %>% as.numeric()
+        }
+        
         # ED50
         ED_fct <- try(ED(tempObj, 50, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
         if(inherits(ED_fct, "try-error")) { 
@@ -426,25 +507,95 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose) {
         } else {
           ED_fct <- ED_fct %>% as.data.frame()
         }
-        colnames(ED_fct) <- c("Std_ED50_Mean", "Std_ED50_SE", "Std_ED50L", "Std_ED50U")
-        half_resp <- try(predict(tempObj, newdata = data.frame(dose = ED_fct$Std_ED50_Mean)))
+        half_resp <- try(predict(tempObj, newdata = data.frame(dose = ED_fct$Estimate)))
         if (!inherits(half_resp, "try-error")) { half_resp <- as.numeric(half_resp) } else { half_resp <- NA }
+        
+        ## additional eds for biphasic curves
+        if (!(grepl("LL", fctName) || grepl("W", fctName))) {
+          if (ed50_type == "Relative") {
+            # modify ED_fct
+            colnames(ED_fct) <- c("ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U")
+            ED_fct_f <- data.frame(
+              ED50_l_res = NA,
+              ED50_r_res = half_resp,
+              ED50_l_Mean = NA,
+              ED50_l_SE = NA,
+              ED50_l_L = NA,
+              ED50_l_U = NA
+            ) %>% cbind(ED_fct)
+            
+            # M value
+            M_fct <- try(drc::MAX(tempObj, upper = max(dose), lower = min_dose))
+            if(inherits(M_fct, "try-error")) { 
+              M_fct <- matrix(NA, 1, 2) %>% as.data.frame()
+            } else {
+              M_fct <- M_fct %>% as.data.frame()
+            }
+            
+            # LDS value
+            LDS_fct <- try(ED(tempObj, 1, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
+            if(inherits(LDS_fct, "try-error")) { 
+              LDS_fct <- matrix(NA, 1, 4) %>% as.data.frame()
+            } else {
+              LDS_fct <- LDS_fct %>% as.data.frame()
+            }
+            
+          } else {
+            ED_fct_f <- matrix(NA, 1, 10) %>% as.data.frame()
+            M_fct <- matrix(NA, 1, 2) %>% as.data.frame()
+            LDS_fct <- matrix(NA, 1, 4) %>% as.data.frame()
+          }
+          
+        } else {
+          
+          # Modify the ED-related dataframe
+          ED_fct_f <- data.frame(
+            ED50_l_res = half_resp,
+            ED50_r_res = NA
+          ) %>% 
+            cbind(ED_fct) %>% 
+            cbind(data.frame(
+              ED50_r_Mean = NA,
+              ED50_r_SE = NA,
+              ED50_r_L = NA,
+              ED50_r_U = NA
+            ))
+          M_fct <- matrix(NA, 1, 2) %>% as.data.frame()
+          LDS_fct <- matrix(NA, 1, 4) %>% as.data.frame()
+          
+        }
+        
+        # Change the column names
+        colnames(ED_fct_f) <- c("ED50_l_res", "ED50_r_res", "ED50_l_Mean", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U")
+        colnames(M_fct) <- c("M", "m_res")
+        colnames(LDS_fct) <- c("LDS_Mean", "LDS_SE", "LDS_L", "LDS_U")
+        
         # Export the info.
-        temp_res <- data.frame(Std_ED50_res = half_resp) %>% cbind(ED_fct)
+        temp_res <- data.frame(
+          max_res = max_res, min_res = min_res,
+          start_res = start_res, m_res = M_fct$m_res
+        ) %>% 
+          cbind(ED_fct_f) %>% 
+          cbind(LDS_fct) %>% 
+          cbind(data.frame(M = M_fct$M))
+        
       }
       
     }, error = function(e) {
       print(e)
-      temp_res <- matrix(NA, 1, 5) %>% as.data.frame()
+      temp_res <- matrix(NA, 1, 19) %>% as.data.frame()
     })
     # Export the info.
     bmd_val <- cbind(bmd_val, temp_res)
 
   } else {
-    bmd_val <- matrix(NA, 1, 8) %>% as.data.frame()
+    
+    bmd_val <- matrix(NA, 1, 22) %>% as.data.frame()
+    
   }
-  colnames(bmd_val) <- c("Curve_BestFit_data", "FctName", "Monotonicity", 
-                         "RG_ED50_res", "RG_ED50_Mean", "RG_ED50_SE", "RG_ED50L", "RG_ED50U")
+  colnames(bmd_val) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "max_res", "min_res", "start_res", "m_res", "ED50_l_res", 
+                         "ED50_r_res", "ED50_l_Mean", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U", 
+                         "LDS_Mean", "LDS_SE", "LDS_L", "LDS_U", "M")
   return(bmd_val)
 }
 
@@ -513,12 +664,14 @@ stats_test <- function(df, fct) {
     if (!inherits(rtest, "try-error")&!is.na(rtest)) {retMat[, 6] <- formatC(rtest, format = "E", digits = 2)} else {retMat[, 6] <- "error"}
     
   }else{
+    
     retMat[, 1] <- NA
     retMat[, 2] <- NA
     retMat[, 3] <- NA
     retMat[, 4] <- NA
     retMat[, 5] <- NA
     retMat[, 6] <- NA
+    
   }
   colnames(retMat) <- c("Lac_of_fit_p",  "Neills_Test_p", "No_Effect_Test_p", "Para_Info", "Lin_Test_p", "Runs_Test_p")
   return(retMat)
@@ -538,6 +691,19 @@ sig_test <- function(x, sign, p) {
 para_sig_test <- function(df, p) {
   sig <- ifelse(all(df$`p.value` < as.numeric(p)), "Significant", "Non-significant")
   return(sig)
+}
+
+
+## Extract the f value -----------------------------------------------------
+
+f_related <- function(df) {
+  if ("f" %in% df$term) {
+    f_df <- df %>% filter(term == "f") %>% dplyr::select(estimate, `p.value`, `conf.low`, `conf.high`)
+  } else {
+    f_df <- matrix(NA, 1, 4) %>% as.data.frame()
+  }
+  colnames(f_df) <- c("f", "f_p", "f_L", "f_U")
+  return(f_df)
 }
 
 
