@@ -343,7 +343,7 @@ df_et_exp <- reactive({
                       (n_var+6):(n_var+7)) # T50
   }
   df_temp <- df_et()[ , selected_var] 
-  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "T50_Mean", "T50_SE")
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "T\u2085\u2080_Mean", "T\u2085\u2080_SE")
   return(df_temp)
 })
 
@@ -352,7 +352,7 @@ T50_table <- reactive({
   n_var <- isolate({data_values_te$n_var})
   df_temp <- df_et_exp() 
   df_temp <- df_temp %>% mutate(across((n_var + 2):ncol(df_temp), ~ map_chr(.x, display_format)))
-  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "T50 Mean", "T50 SE")
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "T\u2085\u2080 Mean", "T\u2085\u2080 SE")
   return(df_temp)
 })
 
