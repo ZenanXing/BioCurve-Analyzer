@@ -461,6 +461,7 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
     
     # doseRange
     doseRange <- seq_log(min_dose, max(dose), length.out = 1000)
+    if(min(dose) == 0){doseRange <- c(0, doseRange)}
     
     # Export the nested data for generate plot
     ## calculate the curve interval
