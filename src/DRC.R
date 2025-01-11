@@ -264,9 +264,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
       if(is.na(as.numeric(input$CRS_c))) {c <- c("0", "NA")} else {c <- input$CRS_c}
       c_d <- expand.grid(c = c, d = "NA")
       fctList_biphsc <- c(fctList_biphsc, 
-                          paste("CRS.5a", c_d$c, c_d$d, sep = "_"), paste("CRS.5b", c_d$c, c_d$d, sep = "_"), paste("CRS.5c", c_d$c, c_d$d, sep = "_"),
-                          paste("UCRS.5a", c_d$c, c_d$d, sep = "_"), paste("UCRS.5b", c_d$c, c_d$d, sep = "_"), paste("UCRS.5c", c_d$c, c_d$d, sep = "_"),
-                          "CRS.6", "UCRS.6")
+                          paste("cedergreen", c_d$c, c_d$d, sep = "_"), paste("ucedergreen", c_d$c, c_d$d, sep = "_"), paste("CRS.6", c_d$c, c_d$d, sep = "_"))
     }
     ### beta models
     if (input$beta) {

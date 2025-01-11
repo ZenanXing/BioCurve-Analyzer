@@ -23,10 +23,25 @@ m_select_new <- function(df_temp, fctList_monotnc, fctList_biphsc, const){
   }
   
   fctList_df <- data.frame(fctList = fctList) %>% 
+    filter(!str_detect(fctList, ".*cedergreen.*")) %>% 
     separate(fctList, into = c("Fct", "c", "d"), sep = "_") %>% 
     mutate(parms_n = as.numeric(gsub(".*\\.([0-9]+).*", "\\1", Fct)),
            parm = pmap(list(c, d, parms_n), function (c,d,n) { if (!is.na(n)) {paste0("fixed = c(", paste(c("NA", c, d, rep("NA", n-3)), collapse = ", "), ")")} else {""}}),
            fctList_f = paste0(Fct, "(", parm, ")"))
+  
+  if (any(str_detect(fctList, ".*cedergreen.*"))) {
+    fctList_df_2 <- data.frame(fctList = fctList) %>% 
+      filter(str_detect(fctList, ".*cedergreen.*")) %>% 
+      separate(fctList, into = c("Fct", "c", "d"), sep = "_") %>% 
+      mutate(parms_n = 5,
+             parm = pmap(list(c, d, parms_n), function (c,d,n) { if (!is.na(n)) {paste0("fixed = c(", paste(c("NA", c, d, rep("NA", n-3)), collapse = ", "), ")")} else {""}}))
+    fctList_df_cg <- bind_rows(replicate(3, fctList_df_2, simplify = FALSE)) %>% 
+      mutate(alpha = rep(c(1, 0.5, 0.25), each = nrow(fctList_df_2))) %>% 
+      mutate(fctList_f = paste0(Fct, "(", parm, ", alpha = ", alpha, ")")) %>% 
+      dplyr::select(-alpha)
+    fctList_df <- rbind(fctList_df, fctList_df_cg)
+  }
+  
   
   fctList_f <- fctList_df$fctList_f
   lenFL <- length(fctList_f)
@@ -78,8 +93,8 @@ m_select_new <- function(df_temp, fctList_monotnc, fctList_biphsc, const){
   }
   ## Change the function name
   df_fct <- data.frame(
-    Fct = c("LL.4", "LL.5", "W1.4", "W2.4", "BC.5", "CRS.5a", "CRS.5b", "CRS.5c", "UCRS.5a", "UCRS.5b", "UCRS.5c", "CRS.6", "UCRS.6", "DRC.beta", NA),
-    Model = c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", rep("Cedergreen-Ritz-Streibig", 8), "beta", NA)
+    Fct = c("LL.4", "LL.5", "W1.4", "W2.4", "BC.5", "CRS.6", "cedergreen", "ucedergreen", "DRC.beta", NA),
+    Model = c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", rep("Cedergreen-Ritz-Streibig", 3), "beta", NA)
   )
   df_ret <- df_ret %>% left_join(df_fct, by = "Fct")
   
@@ -495,7 +510,7 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
         df_para <- tidy(tempObj, conf.int = TRUE)
         if (!"c" %in% df_para$term) { df_para <- rbind(df_para, c("c", "(Intercept)", as.numeric(c), rep(NA, 5))) }
         if (!"d" %in% df_para$term) { df_para <- rbind(df_para, c("d", "(Intercept)", as.numeric(d), rep(NA, 5))) }
-        if (as.numeric(df_para[df_para$term =="b", 3])>0) {
+        if (as.numeric(df_para[df_para$term =="b", 3])>0 && !grepl("ucedergreen", fctName)) {
           start_res <- df_para[df_para$term =="d", 3] %>% as.numeric()
         } else {
           start_res <- df_para[df_para$term =="c", 3] %>% as.numeric()
@@ -534,7 +549,12 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
             }
             
             # LDS value
-            LDS_fct <- try(ED(tempObj, 1, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
+            if (grepl("ucedergreen", fctName)) {
+              LDS_fct <- try(ED(tempObj, 99, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
+            } else {
+              LDS_fct <- try(ED(tempObj, 1, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
+            }
+            
             if(inherits(LDS_fct, "try-error")) { 
               LDS_fct <- matrix(NA, 1, 4) %>% as.data.frame()
             } else {
