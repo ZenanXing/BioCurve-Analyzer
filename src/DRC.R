@@ -266,10 +266,6 @@ df_ed <- eventReactive(input$calculate_Butn, {
       fctList_biphsc <- c(fctList_biphsc, 
                           paste("cedergreen", c_d$c, c_d$d, sep = "_"), paste("ucedergreen", c_d$c, c_d$d, sep = "_"), paste("CRS.6", c_d$c, c_d$d, sep = "_"))
     }
-    ### beta models
-    if (input$beta) {
-      fctList_biphsc <- c(fctList_biphsc, "DRC.beta")
-    }
   }
   
   # Criteria used to select the best model
@@ -393,7 +389,7 @@ df_ed_exp <- reactive({
   ed_methods <- isolate({input$ed_methods})
   ed50_type <- isolate({input$ed50_type})
   # variable names
-  if (n_var != 0) { selected_var <- c(1:n_var, (n_var+11)) } else {selected_var <- NULL}
+  if (n_var != 0) { selected_var <- c(1:n_var, (n_var+11)) } else {selected_var <- c(n_var+11)}
   # ed related
   selected_var <- c(selected_var, (n_var+18):(n_var+21), (n_var+26), (n_var+29):(n_var+48))
   colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", "Method", 
@@ -402,15 +398,16 @@ df_ed_exp <- reactive({
              "High_ED\u2085\u2080_Mean", "High_ED\u2085\u2080_SE", "High_ED\u2085\u2080_LowerBound", "High_ED\u2085\u2080_UpperBound",
              "LDS_Mean", "LDS_SE", "LDS_LowerBound", "LDS_UpperBound", "M")
   # RM method
-  if (ed50_type == "absolute") {
+  if (ed50_type == "Absolute") {
     selected_var <- c(selected_var, (n_var+49):(n_var+54))
     colnm <- c(colnm, "RM_ED\u2085\u2080_Mean", "RM_ED\u2085\u2080_SD", "RM_ED\u2085\u2080_CV", "RM_ED\u2085\u2080_SE", "RM_ED\u2085\u2080_LowerBound", "RM_ED\u2085\u2080_UpperBound")
   }
   # f values
-  if (any(c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig") %in% df_ed()$Model)) {
+  if (any(c("Brain-Cousens", "Cedergreen-Ritz-Streibig") %in% df_ed()$Model)) {
     selected_var <- c(selected_var, (n_var+22):(n_var+25)) 
+    colnm <- c(colnm, "f", "f_p_value", "f_LowerBound", "f_UpperBound")
   }
-  colnm <- c(colnm, "f", "f_p_value", "f_LowerBound", "f_UpperBound")
+  
   
   df_temp <- df_ed()[ , selected_var]
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnm
@@ -477,7 +474,7 @@ ED50_table_Biphasic <- reactive({
     colnms <- c("Method", "f", "p-value (f=0)", "f Lower Bound", "f Upper Bound")
   }
   
-  df_temp <- df_ed() %>% filter(Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig")) %>% dplyr:: select(selected_var)
+  df_temp <- df_ed() %>% filter(Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig")) %>% dplyr:: select(selected_var)
   colnames(df_temp)[(n_var+1):ncol(df_temp)] <- colnms
   # change the format of digit display
   df_temp <- df_temp %>% mutate(across((n_var+2):ncol(df_temp), ~ map_chr(.x, display_format)))
@@ -584,12 +581,6 @@ output$biphasicmodels <- renderUI({
                    textInput("CRS_c", NULL, "Not Fixed")),
             column(3, style = "margin-right: 5px;")
         )
-      ),
-      fluidRow(
-        div(style = "display: flex; justify-content: center; align-items: center;", 
-            column(6, div(style = "display:flex;align-items:center;", checkboxInput("beta", "beta", FALSE))),
-            column(6, style = "margin-right: 10px;")
-        )
       )
     )
   }
@@ -607,7 +598,7 @@ output$ed50_results <- renderUI({
         DT::dataTableOutput("tb_ed_mono") %>% shinycssloaders::withSpinner()
       )
     },
-    if (any(df_ed()$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+    if (any(df_ed()$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
       tagList(
         h5(HTML(paste0("ED", tags$sub("50"), " Estimation Table (Biphasic Curves)")), align = 'center'),
         div(style = "margin-top: -10px"),
@@ -943,7 +934,7 @@ L_P <- reactive({
         geom_hline(data = anno_df, aes(yintercept = min_res), linetype = "longdash", alpha = 0.5, color = clr)
     }
     # LDS & M
-    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
       if (input$plot_lds_m_ck == TRUE) {
         p <- p +
           # LDS
@@ -1007,7 +998,7 @@ L_P <- reactive({
         geom_hline(data = anno_df, aes(yintercept = min_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
     }
     # LDS & M
-    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
       if (input$plot_lds_m_ck == TRUE) {
         p <- p +
           # LDS
@@ -1104,7 +1095,6 @@ output$dl_report <- downloadHandler(
                      two_point_method = input$two_point_method,
                      n_var = ncol(data_predct())-2,
                      color_var = input$line_color_v,
-                     legend_order = eval(parse(text = paste0("unique(data()$", input$line_color_v, ")"))),
                      ED_related = df_ed_exp(),
                      Bestfit_dataframe = data_predct(),
                      ScatterPlot_dataframe = data_scat(),
@@ -1119,6 +1109,7 @@ output$dl_report <- downloadHandler(
     )
     
     n_var <- ncol(data_predct())-2
+    # add the facet info.
     if (n_var <= 1 ) {
       params_1 <- list.append(params_1,
                               facet_var_row = "",
@@ -1134,7 +1125,11 @@ output$dl_report <- downloadHandler(
                                 facet_var_col = paste(setdiff(colnames(data())[1:n_var], c(input$line_color_v, input$facet_row_v)), collapse = "+"))
       }
     }
-    
+    # add the legend info.
+    if (n_var >= 1) {
+      params_1 <- list.append(params_1,
+                              legend_order = eval(parse(text = paste0("unique(data()$", input$line_color_v, ")"))))
+    }
     
     # Knit the document, passing in the `params` list, and eval it in a
     # child of the global environment (this isolates the code in the document

@@ -202,7 +202,7 @@ custmz_P <- reactive({
         geom_hline(data = anno_df, aes(yintercept = min_res), linetype = "longdash", alpha = 0.5, color = clr)
     }
     # LDS & M
-    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+    if (any(isolate({df_ed()})$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
       if (input$plot_lds_m_ck == TRUE) {
         p <- p +
           # LDS

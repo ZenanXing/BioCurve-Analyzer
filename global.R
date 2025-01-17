@@ -93,8 +93,8 @@ m_select_new <- function(df_temp, fctList_monotnc, fctList_biphsc, const){
   }
   ## Change the function name
   df_fct <- data.frame(
-    Fct = c("LL.4", "LL.5", "W1.4", "W2.4", "BC.5", "CRS.6", "cedergreen", "ucedergreen", "DRC.beta", NA),
-    Model = c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", rep("Cedergreen-Ritz-Streibig", 3), "beta", NA)
+    Fct = c("LL.4", "LL.5", "W1.4", "W2.4", "BC.5", "CRS.6", "cedergreen", "ucedergreen", NA),
+    Model = c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II", "Brain-Cousens", rep("Cedergreen-Ritz-Streibig", 3), NA)
   )
   df_ret <- df_ret %>% left_join(df_fct, by = "Fct")
   

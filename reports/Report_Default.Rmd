@@ -98,8 +98,8 @@ if (any(df_all$Model %in% c("Log-logistic (4 paras)", "Log-logistic (5 paras)", 
 }
 
 ## ED50 table - Biphasic curves - Low ED50s
-if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {df_bi <- df_all %>% filter(Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))}
-if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {df_bi <- df_all %>% filter(Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))}
+if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
   bi_low_ed50 <- df_bi[ , c(selected_var, (n_var+12), (n_var+14):(n_var+17))]
   colnames(bi_low_ed50)[(n_var+1):ncol(bi_low_ed50)] <- c("Response at Low ED\u2085\u2080", "Low ED\u2085\u2080 Mean", "Low ED\u2085\u2080 SE", "Low ED\u2085\u2080 Lower Bound", "Low ED\u2085\u2080 Upper Bound")
@@ -109,7 +109,7 @@ if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig")
 }
 
 ## ED50 table - Biphasic curves - High ED50s
-if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
   bi_high_ed50 <- df_bi[ , c(selected_var, (n_var+13), (n_var+18):(n_var+21))]
   colnames(bi_high_ed50)[(n_var+1):ncol(bi_high_ed50)] <- c("Response at High ED\u2085\u2080", "High ED\u2085\u2080 Mean", "High ED\u2085\u2080 SE", "High ED\u2085\u2080 Lower Bound", "High ED\u2085\u2080 Upper Bound")
@@ -119,7 +119,7 @@ if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig")
 }
 
 ## ED50 table - Biphasic curves - LDS
-if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
   bi_lds <- df_bi[ , c(selected_var, (n_var+10), (n_var+22):(n_var+25))]
   colnames(bi_lds)[(n_var+1):ncol(bi_lds)] <- c("Response at LDS", "LDS Mean", "LDS SE", "LDS Lower Bound", "LDS Upper Bound")
@@ -129,7 +129,7 @@ if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig")
 }
 
 ## ED50 table - Biphasic curves - M
-if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
   bi_m <- df_bi[ , c(selected_var, (n_var+11), (n_var+26))]
   colnames(bi_m)[(n_var+1):ncol(bi_m)] <- c("Response at M", "M (Maximum Stimulation/Inhibition)")
@@ -139,7 +139,7 @@ if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig")
 }
 
 ## ED50 table - Biphasic curves - f
-if (any(df_all$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
   bi_f <- df_bi[ , c(selected_var, (n_var+27):(n_var+30))]
   colnames(bi_f)[(n_var+1):ncol(bi_f)] <- c("f", "p-value (f=0)", "f Lower Bound", "f Upper Bound")
@@ -277,7 +277,7 @@ if (n_var == 0) {
         geom_hline(data = ED_related, aes(yintercept = Minimum_Response), linetype = "longdash", alpha = 0.5, color = clr)
     }
     # LDS & M
-    if (any(ED_related$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+    if (any(ED_related$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
       if (plot_lds_m_ck == TRUE) {
         p <- p +
           # LDS
@@ -287,7 +287,7 @@ if (n_var == 0) {
           geom_hline(data = ED_related, aes(yintercept = M_Response), linetype = "longdash", alpha = 0.5, color = clr) + 
           geom_vline(data = ED_related, aes(xintercept = M), linetype = "longdash", alpha = 0.5, color = clr)
         
-        if (input$plot_ci_ck == TRUE) {
+        if (plot_ci_ck == TRUE) {
           p <- p +
             # LDS
             geom_vline(data = ED_related, aes(xintercept = LDS_LowerBound), linetype = "dotted", alpha = 0.5, color = clr) + 
@@ -341,7 +341,7 @@ if (n_var == 0) {
         geom_hline(data = ED_related, aes(yintercept = Minimum_Response, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
     }
     # LDS & M
-    if (any(ED_related$Model %in% c("Brain-Cousens", "beta", "Cedergreen-Ritz-Streibig"))) {
+    if (any(ED_related$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
       if (plot_lds_m_ck == TRUE) {
         p <- p +
           # LDS

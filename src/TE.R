@@ -719,6 +719,7 @@ output$dl_report_te <- downloadHandler(
                         ScatterPlot_dataframe = data_scat_te()
     )
     n_var <- ncol(data_predct_te())-2
+    # add the facet info.
     if (n_var <= 1 ) {
       params_1_te <- list.append(params_1_te,
                                  facet_var_row = "",
@@ -727,16 +728,18 @@ output$dl_report_te <- downloadHandler(
       if (n_var == 2) {
         params_1_te <- list.append(params_1_te,
                                    facet_var_row = input$facet_row_v_te,
-                                   facet_var_col = ".",
-                                   legend_order = eval(parse(text = paste0("unique(data_te()$", input$line_color_v_te, ")"))))
+                                   facet_var_col = ".")
       } else {
         params_1_te <- list.append(params_1_te,
                                    facet_var_row = input$facet_row_v_te,
-                                   facet_var_col = paste(setdiff(colnames(data_te())[1:n_var], c(input$line_color_v_te, input$facet_row_v_te)), collapse = "+"),
-                                   legend_order = eval(parse(text = paste0("unique(data_te()$", input$line_color_v_te, ")"))))
+                                   facet_var_col = paste(setdiff(colnames(data_te())[1:n_var], c(input$line_color_v_te, input$facet_row_v_te)), collapse = "+"))
       }
     }
-    
+    # add the legend info.
+    if (n_var >= 1) {
+      params_1 <- list.append(params_1,
+                              legend_order = eval(parse(text = paste0("unique(data_te()$", input$line_color_v_te, ")"))))
+    }
     
     # Knit the document, passing in the `params` list, and eval it in a
     # child of the global environment (this isolates the code in the document
