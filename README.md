@@ -59,7 +59,7 @@ If you need any help or support related to this app, feel free to contact us at 
 
 ## License & DOI
 
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details, and the DOI for the app is [DOI].  
+This project is licensed under the GNU General Public License, version 3 (GPLv3) - see the LICENSE.md file for details, and the DOI for the app is [DOI].  
   
 [(Back to top)](#biocurve-analyzer)
 
@@ -69,7 +69,7 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
 
 
 - **Our paper:**  
-*[ZenanX, xxxxxxxx]*  
+*Xing Z, Eckhardt J, Vaidya A, Cutler S. BioCurve Analyzer: a web-based shiny app for analyzing biological response curves. (manuscript in preparation)*  
 
 - **Generate the curves:**  
 *Ritz C, Baty F, Streibig JC, Gerhard D. [Dose-Response Analysis Using R](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0146021). PLoS One. 2015;10:e0146021.*  
@@ -98,4 +98,3 @@ If you use the Biocurve Analyzer, please cite our paper and the related papers l
 
   
 [(Back to top)](#biocurve-analyzer)
-
