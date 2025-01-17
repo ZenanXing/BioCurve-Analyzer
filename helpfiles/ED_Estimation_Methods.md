@@ -6,14 +6,14 @@ In biological assays, two types of ED~50~s are commonly used: absolute and relat
 •	**Absolute ED~50~**: This is the dose that produces exactly a 50% response. It's meaningful only when the data is normalized against a control treatment.  
 <p align="center">
 
-<img src="absolutevsrelative.png" alt="absolute vs relative" width="70%"/>
+<img src="absolutevsrelative.png" alt="absolute vs relative" width="60%"/>
 
 </p>
 
 
 #### - ED~50~ Estimation Methods
 You can estimate both the relative and absolute ED~50~s by using the build-in functions in the `drc` package, referred to here as the **Ritz-Gerhard Method**. However, due to the diversity of curve patterns, these functions may not always yield valid ED~50~ estimates.  
-To address more complex scenarios, we introduced another two methods to estimate ED~50~s. One method is referred as **Serra-Greco Method** developed by Serra et al., while the other one was first introduced by Reed et al. in 1938 and further discussed by Ramakrishnan in 2016, which is known as the **Reed-and-Muench Method**. The differences between these three methods are summarized in the following table. When a curve does not fit any of the models, the Reed-and-Muench Method offers an absolute ED~50~ estimation by assuming linear regression between the two points that bracket the ED~50~ (see the accompanying figure). The primary advantage of the Serra-Greco Method is its effectiveness in estimating ED~50~s from biphasic curves. In such cases, doses that provide 50% of the maximum response on both sides of the curve are equally important for researchers. While the built-in function (Ritz-Gerhard Method) only provides the higher dose, the Serra-Greco Method yields ED~50~ values for both sides, which are more reasonable, as shown in the figure below.  
+To address more complex scenarios, we introduced another two methods to estimate ED~50~s. One method is referred as **Serra-Greco Method** developed by Serra et al., while the other one was first introduced by Reed et al. in 1938 and further discussed by Ramakrishnan in 2016, which is known as the **Reed-and-Muench Method**. The differences between these three methods are summarized in the following table. When a curve does not fit any of the models, the Reed-and-Muench Method offers an absolute ED~50~ estimation by assuming linear regression between the two points that bracket the ED~50~ (see the accompanying figure). The primary advantage of the Serra-Greco Method is its effectiveness in estimating effective doses from biphasic curves. In such cases, effective doses such as LDS, M and ED~50~ are informative to researchers. The parameter M represents the dose that elicits the maximum stimulation, while LDS (limiting dose for stimulation) corresponds to the dose that gives the control response within the second phase of the curve. The estimation of ED~50~ values within both phases of the curve is essential. While the built-in function (Ritz-Gerhard Method) only provides the higher ED~50~, the Serra-Greco Method yields ED~50~ values for both sides, which are more reasonable, as shown in the figure below.  
 
 <p align="center">
 
