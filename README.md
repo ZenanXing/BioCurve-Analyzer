@@ -8,7 +8,7 @@ A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological
 
 ## Getting Started
 
-Biocurve Analyzer can be used both locally and online. The app can be installed following the instructions below and it is also hosted on Shinyapps.io: link to the app.  
+Biocurve Analyzer can be used both locally and online. The app can be installed following the instructions below and it is also hosted on Shinyapps.io: https://zenanx.shinyapps.io/biocurve-analyzer/.  
 
 ### Installation
 
@@ -59,7 +59,7 @@ If you need any help or support related to this app, feel free to contact us at 
 
 ## License & DOI
 
-This project is licensed under the GNU General Public License, version 3 (GPLv3) - see the LICENSE.md file for details, and the DOI for the app is [DOI].  
+This project is licensed under the GNU General Public License, version 3 (GPLv3) - see the LICENSE.md file for details, and the DOI for the app is [![DOI](https://zenodo.org/badge/851862809.svg)](https://doi.org/10.5281/zenodo.14681407).  
   
 [(Back to top)](#biocurve-analyzer)
 
