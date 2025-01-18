@@ -737,8 +737,8 @@ output$dl_report_te <- downloadHandler(
     }
     # add the legend info.
     if (n_var >= 1) {
-      params_1 <- list.append(params_1,
-                              legend_order = eval(parse(text = paste0("unique(data_te()$", input$line_color_v_te, ")"))))
+      params_1_te <- list.append(params_1_te,
+                                 legend_order = eval(parse(text = paste0("unique(data_te()$", input$line_color_v_te, ")"))))
     }
     
     # Knit the document, passing in the `params` list, and eval it in a

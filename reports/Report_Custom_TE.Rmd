@@ -138,6 +138,7 @@ palette <- unlist(strsplit(params$palette, ", "))
 # bestfit_dataframe <- read.xlsx("ExportedExcel.xlsx", sheet = 2)
 # scatterplot_dataframe <- read.xlsx("ExportedExcel.xlsx", sheet = 3)
 # Annotation dataframe
+colnames(T50_related)[(n_var+1):ncol(T50_related)]<- c("Model", "T50_Mean", "T50_SE")
 T50_related <- T50_related %>% mutate(T50_res = 0.5, max_res = 1, min_res = 0)
 T50_related[, (n_var+2):ncol(T50_related)] <- lapply(T50_related[, (n_var+2):ncol(T50_related)], as.numeric)
 
