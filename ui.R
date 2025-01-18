@@ -48,7 +48,7 @@ navbarPage(
         div(style = "margin-top: -15px"), 
         p("2. Most popular models used to describe the data are provided as candidates, and it also helps to select the best model."),
         div(style = "margin-top: -15px"), 
-        p(HTML(paste0("3. Calculate the ED", tags$sub("50"), "/ T", tags$sub("50"), " values from the curves with diverse patterns."))),
+        p(HTML(paste0("3. Calculate the ED", tags$sub("50"), "/T", tags$sub("50"), " values from the curves with diverse patterns."))),
         div(style = "margin-top: -15px"), 
         p("4. Generate dose-response or time-to-event curves with customized appearance."),
         div(style = "margin-top: -15px"), 
@@ -72,7 +72,11 @@ navbarPage(
         div(style = "margin-top: -15px"), 
         p(em("Vaidya, A.S. et al. (2019) Dynamic control of plant water use using designed ABA receptor agonists. Science, 366(6464)")),
         div(style = "margin-top: -15px"), 
-        p(em("Eckhardt J, et al. (2024) Robotic Imaging and Machine Learning Analysis of Seed Germination: Dissecting the Influence of ABA and DOG1 on Germination Uniformity. Plant Biology"))
+        p(em("Eckhardt J, et al. (2024) Robotic Imaging and Machine Learning Analysis of Seed Germination: Dissecting the Influence of ABA and DOG1 on Germination Uniformity. Plant Biology")),
+        br(),
+        h5("Source code:"),
+        hr(),
+        p("The source code, along with the example data, is available via the GitHub repository (", a(href = "https://github.com/ZenanXing/Biocurve-Analyzer.git", "https://github.com/ZenanXing/Biocurve-Analyzer.git"), ")")
     )
   ),
   
