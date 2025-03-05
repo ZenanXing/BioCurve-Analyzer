@@ -46,6 +46,9 @@ observe({
   data_values_te$before <- colnames(data_te())[data_values_te$n_var+2]
   data_values_te$after <- colnames(data_te())[data_values_te$n_var+3]
   data_values_te$count <- colnames(data_te())[data_values_te$n_var+4]
+  # Time intervals
+  data_values_te$time_intv <- as.numeric(strsplit(input$time_intv, ",")[[1]])
+  
   if (data_values_te$n_var < 1) {
     data_values_te$color_var <- "grey"
   } else {
@@ -72,7 +75,7 @@ observeEvent(input$upldData_Butn_te, {
   # Show a message if some of ED50s cannot be estimated by log-logistic model
   if (data_values_te$n_var < 0) {
     shinyalert(title = "Attention", 
-               text = h5("It seems the data you uploaded doesn't have the nessary columns, please upload the data in the correct format."), 
+               text = h5("It seems the data you uploaded doesn't have the necessary columns, please upload the data in the correct format."), 
                type = "error",
                html = TRUE)
   }
@@ -118,7 +121,7 @@ data_scat_te <- reactive({
     colnames(data_scat_te) <- c(colnames(data_te())[1:n_var], "Replicate", "Before", "After", "Response")
   }
   # data_scat_te$Before[data_scat_te$Before == 0] <- 0.03
-  data_scat_te <- data_scat_te %>% mutate(After = replace(After, is.infinite(After), NA)) %>% drop_na()
+  # data_scat_te <- data_scat_te %>% mutate(After = replace(After, is.infinite(After), NA)) %>% drop_na()
   
   return(data_scat_te)
 })
@@ -127,42 +130,72 @@ data_scat_te <- reactive({
 # Mean and SD_dataset
 data_m_te <- reactive({
   req(data_values_te$n_var >= 0)
+  # full list of time intervals:
+  data_te_full_int <- data.frame(
+    Before = data_values_te$time_intv,
+    After = c(data_values_te$time_intv[-1], Inf)
+  ) %>% tidyr::unite(Before, After, col = 'time_int')
+  # generate the data frame
   if(data_values_te$n_var == 0) {
     data_m_te <- data_scat_te() %>% 
       tidyr::unite(Before, After, col = 'time_int') %>% 
+      group_by(Replicate) %>%
+      nest() %>%
+      mutate(data = map(data, ~ .x %>% merge(data_te_full_int, ., by = "time_int", all.x = TRUE, sort = FALSE))) %>% 
+      unnest(cols = c(data)) %>%
       pivot_wider(names_from = time_int, values_from = Response) %>% 
       pivot_longer(2:last_col(), names_to = 'time_int', values_to = 'Response') %>% 
       pivot_wider(names_from = Replicate, values_from = Response) %>% 
-      dplyr::arrange(time_int) %>% 
-      filter(!if_all(all_of(2:last_col()), is.na)) %>% 
+      separate(time_int, into = c('Before', 'After'), convert = TRUE) %>% 
+      dplyr::arrange(Before) %>% 
+      tidyr::unite(Before, After, col = 'time_int') %>% 
+      #filter(!if_all(all_of(2:last_col()), is.na)) %>% 
       fill(everything(), .direction = 'down') %>% 
-      mutate_all(~ replace_na(., 0)) %>% 
-      dplyr::arrange(time_int) %>% 
+      #mutate_all(~ replace_na(., 0)) %>% 
+      mutate(across(everything(), ~ replace_na(., 0))) %>%
       pivot_longer(2:last_col(), names_to = 'Replicate', values_to = 'Response') %>% 
+      #dplyr::arrange(time_int) %>% 
       separate(time_int, into = c('Before', 'After')) %>% 
-      group_by(After) %>% 
-      mutate(After = as.numeric(After)) %>% 
-      dplyr::summarise(Mean = mean(Response), .groups = 'drop')
+      group_by(Before, After) %>%
+      mutate(Before = as.numeric(Before), 
+             After = as.numeric(After)) %>% 
+      dplyr::summarise(Mean = mean(Response), .groups = 'drop') %>% 
+      mutate(ymin = c(Mean[1], Mean[-nrow(.)]))
   } else {
     n_var <- data_values_te$n_var
     data_m_te <- data_scat_te() %>%
-      tidyr::unite(Before, After, col = "time_int") %>%
+      tidyr::unite(Before, After, col = "time_int") %>% 
+      group_by(across(1:(n_var+1))) %>%
+      nest() %>%
+      mutate(data = map(data, ~ .x %>% merge(data_te_full_int, ., by = "time_int", all.x = TRUE))) %>% 
+      unnest(cols = c(data)) %>%
       pivot_wider(names_from = time_int, values_from = Response) %>%
       pivot_longer(cols = (n_var + 2):last_col(), names_to = "time_int", values_to = "Response") %>%
       pivot_wider(names_from = Replicate, values_from = Response) %>%
-      dplyr::arrange(across(1:n_var), time_int) %>%
-      filter(!if_all((n_var + 2):last_col(), is.na)) %>%
+      #dplyr::arrange(across(1:n_var), time_int) %>%
+      #filter(!if_all((n_var + 2):last_col(), is.na)) %>%
       group_by(across(1:n_var)) %>%
       nest() %>%
-      mutate(data = lapply(data, remove_na_columns)) %>% 
-      mutate(data = map(data, ~ .x %>% fill(everything(), .direction = "down") %>% pivot_longer(cols = 2:ncol(.x), names_to = "Replicate", values_to = "Response" ))) %>%
+      #mutate(data = lapply(data, remove_na_columns)) %>% 
+      mutate(data = map(data, ~ .x %>% 
+                          separate(time_int, into = c('Before', 'After'), convert = TRUE) %>% 
+                          dplyr::arrange(Before) %>% 
+                          tidyr::unite(Before, After, col = 'time_int') %>% 
+                          fill(everything(), .direction = "down") %>% 
+                          mutate(across(everything(), ~ replace_na(., 0))) %>%
+                          pivot_longer(cols = 2:ncol(.x), names_to = "Replicate", values_to = "Response" ))) %>%
       unnest(cols = c(data)) %>%
-      mutate(across(everything(), ~ replace_na(., 0))) %>%
-      dplyr::arrange(across(1:n_var), time_int) %>%
+      mutate(across(everything(), ~ replace_na(., 0))) %>% 
+      #dplyr::arrange(across(1:n_var), time_int) %>%
       separate(time_int, into = c("Before", "After")) %>%
-      group_by(across(1:n_var), After) %>%
-      mutate(After = as.numeric(After)) %>%
-      dplyr::summarise(Mean = mean(Response, na.rm = TRUE), .groups = 'drop')
+      group_by(across(1:n_var), Before, After) %>%
+      mutate(Before = as.numeric(Before), 
+             After = as.numeric(After)) %>% 
+      dplyr::summarise(Mean = mean(Response, na.rm = TRUE), .groups = 'drop') %>% 
+      group_by(across(1:n_var)) %>%
+      nest() %>%
+      mutate(data = map(data, ~ .x %>% mutate(ymin = c(Mean[1], Mean[-nrow(.)])))) %>% 
+      unnest(cols = c(data))
   }
 })
 
@@ -175,11 +208,16 @@ lineplot_te <- reactive({
   if (data_values_te$n_var == 0) {
     lineplot <- ggplot(data = data_scat_te(), aes(x = After, y = Response)) + 
       # lines generated by connecting the mean value
+      # geom_rect(data = data_m_te(), aes(xmin = Before, xmax = After, ymin = ymin, ymax = Mean), inherit.aes = FALSE, alpha = 0.3) +
       geom_line(data = data_m_te(), aes(x = After, y = Mean))
   } else {
     lineplot <- ggplot(data = data_scat_te(), aes(x = After, y = Response, 
                                                   color = eval(parse(text = data_values_te$color_var)), 
                                                   group = eval(parse(text = data_values_te$color_var)))) + 
+      # geom_rect(data = data_m_te(), aes(xmin = Before, xmax = After, 
+      #                                   ymin = ymin, ymax = Mean, 
+      #                                   fill = eval(parse(text = data_values_te$color_var))), 
+      #           inherit.aes = FALSE, alpha = 0.3, show.legend = FALSE) + 
       labs(color = data_values_te$color_var) +
       # lines generated by connecting the mean value
       geom_line(data = data_m_te(), aes(x = After, y = Mean))
@@ -187,7 +225,7 @@ lineplot_te <- reactive({
   
   lineplot <- lineplot +
     geom_point(alpha = 0.5) + 
-    scale_x_log10() +
+    #scale_x_log10() +
     xlab("Time") + 
     ylab("Rate of Event") +
     theme_few() +
@@ -273,8 +311,6 @@ df_et <- eventReactive(input$calculate_Butn_te, {
   # Criteria used to select the best model
   const <- input$crtrn_selected_te
   
-  # Time intervals
-  time_intv <- as.numeric(strsplit(input$time_intv, ",")[[1]])
   
   # Find the best model for each curve
   Data <- data_te()
@@ -282,7 +318,7 @@ df_et <- eventReactive(input$calculate_Butn_te, {
     colnames(Data) <- c("Replicate", "Before", "After", "Count")
     model_te <- Data %>% 
       nest() %>% 
-      mutate(ED_info = purrr::pmap(list(data), compute_et, fctList_monotnc = fctList_monotnc, const = const, time_intv = time_intv)) %>% 
+      mutate(ED_info = purrr::pmap(list(data), compute_et, fctList_monotnc = fctList_monotnc, const = const, time_intv = data_values_te$time_intv)) %>% 
       unnest(ED_info)
     colnames(model_te)[1] <- "RawData"
   } else {
@@ -290,7 +326,7 @@ df_et <- eventReactive(input$calculate_Butn_te, {
     model_te <- Data %>% 
       group_by(across(1:n_var)) %>% 
       nest() %>% 
-      mutate(ED_info = purrr::pmap(list(data), compute_et, fctList_monotnc = fctList_monotnc, const = const, time_intv = time_intv)) %>% 
+      mutate(ED_info = purrr::pmap(list(data), compute_et, fctList_monotnc = fctList_monotnc, const = const, time_intv = data_values_te$time_intv)) %>% 
       unnest(ED_info)
     colnames(model_te)[n_var+1] <- "RawData"
   }
