@@ -136,16 +136,18 @@ custmz_P_te <- reactive({
       geom_point(data = isolate({data_scat_te()}), aes(x = After, y = Response), alpha = 0.5, color = clr)
     
     # annotation dataframe
-    anno_df <- df_et() %>% dplyr::select((n_var+6):(n_var+8)) %>% 
-      mutate(T50_res = 0.5, max_res = 1, min_res = 0)
+    anno_df <- isolate({df_et_exp()})
     anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
+    colnames(anno_df)[(n_var+1):ncol(anno_df)]<- c("Model", "max_res", "min_res", "T50_res", 
+                                                   "T50", "T50_SE", "T50_SD", "T50_Lower", "T50_Upper")
+    
     # T50
     if (input$plot_ed50_ck_te == TRUE) {
       p <- p +
         # response lines
         geom_hline(data = anno_df, aes(yintercept = T50_res), linetype = "longdash", alpha = 0.5, color = clr) + 
         # ed lines
-        geom_vline(data = anno_df, aes(xintercept = T50_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+        geom_vline(data = anno_df, aes(xintercept = T50), linetype = "longdash", alpha = 0.5, color = clr)
     }
     
   } else {
@@ -249,7 +251,8 @@ output$dl_plot_df_2_te <- downloadHandler(
   content = function(file) {
     list_of_datasets <- list("T50_related" = df_et_exp(), 
                              "Bestfit_dataframe" = data_predct_te(), 
-                             "ScatterPlot_dataframe" = data_scat_te()
+                             "ScatterPlot_dataframe" = data_scat_te(), 
+                             "Mean_dataframe" = df_mean_exp()
     )
     write.xlsx(list_of_datasets, file)
   }
@@ -264,12 +267,18 @@ output$dl_report_2_te <- downloadHandler(
     
     # Set up parameters to pass to Rmd document
     params_2_te <- list(table = T50_table(),
+                        unit = input$unit,
+                        min_time = data_values_te$min_time,
+                        t50_type = input$ed50_type, 
                         n_var = ncol(data_predct_te())-2,
                         color_var = input$line_color_v_te,
-                        plot_ed50_ck_te = input$plot_ed50_ck_te,
+                        Mean_SD_dataframe = df_mean_exp(),
                         T50_related = df_et_exp(),
                         Bestfit_dataframe = data_predct_te(),
                         ScatterPlot_dataframe = data_scat_te(),
+                        plot_ed50_ck_te = input$plot_ed50_ck_te,
+                        plot_resline_ck_te = input$plot_resline_ck_te,
+                        plot_ci_ck_te = input$plot_ci_ck_te,
                         plot_title = input$plot_title_te,
                         label_x_axis = input$x_label_te,
                         label_y_axis = input$y_label_te,
