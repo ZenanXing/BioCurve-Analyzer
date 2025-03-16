@@ -824,19 +824,19 @@ compute_et <- function(df_temp, t50_type, fctList_monotnc, const, extra_arg, tim
       }
       
       ## curve_df
-      if (t50_type == "Relative") {
-        timeRange <- seq(min(time_intv), max(time_intv), length.out = 1000)
-        timeRange2 <- time_intv
-      } else {
+      if (t50_type == "Absolute" && fct_select == "NPMLE") {
         timeRange <- c(seq(min(time_intv), max(time_intv), length.out = 1000), Inf)
         timeRange2 <- c(time_intv, Inf)
+      } else {
+        timeRange <- seq(min(time_intv), max(time_intv), length.out = 1000)
+        timeRange2 <- time_intv
       }
       
       if (fct_select == "NPMLE") {
         df_curve <- predict(tempObj, newdata = data.frame(time = timeRange), npmle.type = extra_arg,
                             interval = TRUE, level = 0.95) %>% as.data.frame()
       } else {
-        df_curve <- predict(tempObj, newdata = data.frame(time = c(timeRange, Inf)),
+        df_curve <- predict(tempObj, newdata = data.frame(time = timeRange),
                             interval = TRUE, level = 0.95) %>% as.data.frame()
       }
       

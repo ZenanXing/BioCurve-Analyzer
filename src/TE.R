@@ -81,7 +81,7 @@ observe({
 #### Message box to remind users if the file doesn't contain the necessary columns -------------------------------------------------------
 observeEvent(input$upldData_Butn_te, {
   # req(data())
-  # Show a message if some of ED50s cannot be estimated by log-logistic model
+  # Show a message if some of T50s cannot be estimated by log-logistic model
   if (data_values_te$n_var < 0) {
     shinyalert(title = "Attention", 
                text = h5("It seems the data you uploaded doesn't have the necessary columns, please upload the data in the correct format."), 
@@ -285,7 +285,7 @@ observeEvent(input$clearText_Butn_te, {
 
 ############################################################ T50 Estimation tab #######################################################################################
 
-#### Reactive Objects - Model & ED50 info. #################################################################
+#### Reactive Objects - Model & T50 info. #################################################################
 
 # Selected models and info. 
 df_et <- eventReactive(input$calculate_Butn_te, {
@@ -341,7 +341,7 @@ df_et <- eventReactive(input$calculate_Butn_te, {
     
   }
   
-  # ED50 type
+  # T50 type
   t50_type <- isolate({input$t50_type})
   
   # Find the best model for each curve and calculate the T50
@@ -524,7 +524,7 @@ observeEvent(input$line_color_v_te, {
                     selected = setdiff(colnames(data_te())[1:data_values_te$n_var], input$line_color_v_te)[1])
 })
 
-#### Plot_ED&Responses_Line_UI -----------------------------------------------------------------------------
+#### Plot_T50&Responses_Line_UI -----------------------------------------------------------------------------
 output$plot_resline_ui_te <- renderUI({
   wellPanel(
     h6(HTML(paste0("Show the T", tags$sub("50"), " values and the corresponding responses："))),
@@ -666,6 +666,14 @@ L_P_te <- reactive({
   } else {
     data_scat_te <- isolate({data_scat_te()})
     data_predct_te <- data_predct_te()
+  }
+  
+  # T50 type
+  t50_type <- isolate({input$t50_type})
+  if(t50_type == "Absolute" && all(isolate({df_et()})$FctName == "NPMLE")) {
+    data_scat_te <- data_scat_te
+  } else {
+    data_scat_te <- data_scat_te %>% filter(!is.infinite(After))
   }
   
   # facet plot related
