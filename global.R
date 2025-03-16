@@ -314,14 +314,14 @@ compute_ed <- function(opt_mod, dataframe,
         
         # Export the info.
         temp_res <- data.frame(
-          max_res = max_res, min_res = min_res,
-          start_res = start_res, m_res = m_res,
+          max_res = max_res, min_res = min_res, 
+          start_res = start_res, m_res = m_res, 
           ED50_l_res = half_resp, ED50_r_res = half_resp_2, 
           ED50_l_Mean = half_con, ED50_l_SE = NA, ED50_l_L = edl, ED50_l_U = edu, 
           ED50_r_Mean = half_con2, ED50_r_SE = NA, ED50_r_L = edl2, ED50_r_U = edu2, 
           LDS_Mean = lds, LDS_SE = NA, LDS_L = ldsl, LDS_U = ldsu, 
           M = m
-          )
+        )
         
       }, error = function(e) {
         print(e)
@@ -329,8 +329,10 @@ compute_ed <- function(opt_mod, dataframe,
       })
       
     }
+    
     # Export the info.
     bmd_val <- cbind(bmd_val, temp_res) %>% as.data.frame()
+    
   }
   
   return(bmd_val)
@@ -735,83 +737,169 @@ remove_na_columns <- function(df) {
 }
 
 ## Function to fit the time-to-event data to the best model annd estimate the T50-----
-compute_et <- function(df_temp, fctList_monotnc, const, time_intv){
+compute_et <- function(df_temp, t50_type, fctList_monotnc, const, extra_arg, time_intv){
   
   #df_temp <- model_te$RawData[[1]]
   ## Select the list of functions based the shape of the curves
   fctList_f <- c(fctList_monotnc)
   lenFL <- length(fctList_f)
   
-  ## Pick the best fit model
-  retMat <- matrix(0, lenFL, 2)
-  for (i in 1:lenFL) {
-    tempObj <- try(eval(parse(text = paste0("drmte(Count ~ Before + After, data = df_temp, fct = ", 
-                                            fctList_f[i], "())"))), silent = FALSE)
-    
-    
-    if (!inherits(tempObj, "try-error")){
-      retMat[i, 1] <- AIC(tempObj)
-      retMat[i, 2] <- BIC(tempObj)
-    }else{
-      retMat[i, 1] <- NA
-      retMat[i, 2] <- NA
+  ## Pick the best fit model for parametric models
+  if (all(!c("KDE", "NPMLE") %in% fctList_f)) {
+    retMat <- matrix(0, lenFL, 2)
+    for (i in 1:lenFL) {
+      tempObj <- try(eval(parse(text = paste0("drmte(Count ~ Before + After, data = df_temp, fct = ", 
+                                              fctList_f[i], "())"))), silent = FALSE)
+      if (!inherits(tempObj, "try-error")){
+        retMat[i, 1] <- AIC(tempObj)
+        retMat[i, 2] <- BIC(tempObj)
+      }else{
+        retMat[i, 1] <- NA
+        retMat[i, 2] <- NA
+      }
+      
     }
-    
+    colnames(retMat) <- c("AIC", "BIC")
+    if (all(is.na(retMat[, 1]))) {
+      fct_select <- NA
+    } else {
+      retMat <- data.frame(retMat, FctName = fctList_f)
+      retMat <- retMat %>% mutate(rowNmbr = rownames(retMat))
+      eval(parse(text = paste0("retMat <- retMat %>% filter(", const, " > 0) %>% arrange(", const, ")")))
+      fct_select_num <- as.numeric(retMat$rowNmbr[1])
+      fct_select <- fctList_f[fct_select_num]
+    }
+  } else {
+    fct_select <- fctList_f
   }
-  colnames(retMat) <- c("AIC", "BIC")
+  
   
   ## Calculate the T50 for the best model
   
-  if (all(is.na(retMat[, 1]))) {
+  if (is.na(fct_select)) {
     # If none of the models can be applied to the data
-    temp_Ret <- matrix(NA, 1, 4) %>% as.data.frame()
+    temp_Ret <- matrix(NA, 1, 11) %>% as.data.frame()
   } else {
-    retMat <- data.frame(retMat, FctName = fctList_f)
-    retMat <- retMat %>% mutate(rowNmbr = rownames(retMat))
-    eval(parse(text = paste0("retMat <- retMat %>% filter(", const, " > 0) %>% arrange(", const, ")")))
-    fct_select <- as.numeric(retMat$rowNmbr[1])
-    tempObj <- try(eval(parse(text = paste0("drmte(Count ~ Before + After, data = df_temp, fct = ", 
-                                            fctList_f[fct_select], "())"))), silent = FALSE)
+    if (fct_select == "KDE") {
+      tempObj <- try(eval(parse(text = paste0("drmte(Count ~ Before + After, data = df_temp, fct = KDE(bw = '", extra_arg, "'))"))), silent = FALSE)
+    } else {
+      tempObj <- try(eval(parse(text = paste0("drmte(Count ~ Before + After, data = df_temp, fct = ", fct_select, "())"))), silent = FALSE)
+    }
+    
     #plot(tempObj)
     if (!inherits(tempObj, "try-error")){
-      tempED <- ED(tempObj, 0.5, type = "absolute") %>% as.data.frame() %>% mutate(FctName = fctList_f[fct_select])
+      
+      t50_txt <- "quantile(tempObj, probs = c(0.5), interval = TRUE"
+      
+      if (t50_type == "Relative") {
+        t50_txt <- paste0(t50_txt, ", restricted = TRUE", collapse = "")
+      } else {
+        t50_txt <- paste0(t50_txt, ", restricted = FALSE", collapse = "")
+      }
+      
+      if (fct_select == "NPMLE") {
+        t50_txt <- paste0(t50_txt, ", npmle.type = ", extra_arg, ")", collapse = "")
+      } else {
+        t50_txt <- paste0(t50_txt, ")", collapse = "")
+      }
+      
+      tempED <- eval(parse(text = t50_txt)) %>% as.data.frame()
+      
+      if (fct_select == "KDE") {
+        tempED <- tempED %>% 
+          dplyr::select(Estimate) %>% 
+          mutate(SE = NA, Lower = NA, Upper = NA, SD = NA) %>% 
+          mutate(FctName = fct_select)
+      } else {
+        if (fct_select != "NPMLE") {
+          tempED <- tempED %>% dplyr::select(Estimate, SE, Lower, Upper)
+        } else {
+          tempED <- tempED %>% dplyr::select(Mean, SE, Lower, Upper)
+        }
+        ## calculate the SD
+        n <- n_distinct(df_temp$Replicate)
+        tempED <- tempED %>% 
+          mutate(SD = SE*sqrt(n), 
+                 FctName = fct_select)
+      }
       
       ## curve_df
-      timeRange <- seq_log(min(time_intv), max(time_intv), length.out = 500)
-      df_curve <- predict(tempObj, newdata = data.frame(time = as.vector(timeRange)),
-                          interval = TRUE, level = 0.95) %>% as.data.frame()
+      if (t50_type == "Relative") {
+        timeRange <- seq(min(time_intv), max(time_intv), length.out = 1000)
+        timeRange2 <- time_intv
+      } else {
+        timeRange <- c(seq(min(time_intv), max(time_intv), length.out = 1000), Inf)
+        timeRange2 <- c(time_intv, Inf)
+      }
+      
+      if (fct_select == "NPMLE") {
+        df_curve <- predict(tempObj, newdata = data.frame(time = timeRange), npmle.type = extra_arg,
+                            interval = TRUE, level = 0.95) %>% as.data.frame()
+      } else {
+        df_curve <- predict(tempObj, newdata = data.frame(time = c(timeRange, Inf)),
+                            interval = TRUE, level = 0.95) %>% as.data.frame()
+      }
+      
+      ## mean_df
+      df_mean_all <- predict(tempObj, newdata = data.frame(time = timeRange2),
+                         interval = TRUE, level = 0.95) %>% as.data.frame()
+      df_mean <- data.frame(
+        Before = df_mean_all$time[1:(nrow(df_mean_all)-1)],
+        After = df_mean_all$time[-1],
+        Ymin = df_mean_all$Prediction[1:(nrow(df_mean_all)-1)],
+        Ymax = df_mean_all$Prediction[-1]
+      )
+      
+      # minimum and maxmum responses
+      min_res <- min(df_curve[, 2])
+      max_res <- max(df_curve[, 2])
+      if (t50_type == "Relative") {
+        if (fct_select == "NPMLE") { 
+          half_resp <- try(predict(tempObj, newdata = data.frame(dose = tempED[1, 1]), npmle.type = extra_arg))
+        } else {
+          half_resp <- try(predict(tempObj, newdata = data.frame(dose = tempED[1, 1])))
+        }
+        if (!inherits(half_resp, "try-error")) { half_resp <- as.numeric(half_resp$Prediction) } else { half_resp <- NA }
+      } else {
+        half_resp <- 0.5
+      }
       
       # Combine all the dataframe
-      temp_Ret <- nest(df_curve, data = everything()) %>% cbind(tempED)
+      temp_Ret <- nest(df_curve, data = everything()) %>% 
+        mutate(MeanData = map(seq_len(n()), ~ df_mean)) %>% 
+        mutate(min_res = min_res,
+               max_res = max_res,
+               t50_res = half_resp) %>% 
+        cbind(tempED)
       
     }else{
-      temp_Ret <- matrix(NA, 1, 4) %>% as.data.frame()
+      temp_Ret <- matrix(NA, 1, 11) %>% as.data.frame()
     }
   }
   
   # More modification of the dataframe
-  colnames(temp_Ret) <- c("Curve_BestFit_data", "T50_Mean", "T50_SE", "FctName1")
+  colnames(temp_Ret) <- c("Curve_BestFit_data", "MeanData", "min_res", "max_res", "T50_res", "T50", "T50_SE", "T50_Lower", "T50_Upper", "T50_SD", "FctName1")
   # Change the function name
   df_fct <- data.frame(
-    FctName1 = c("LL.2", "LL.3", "LN.2", "LN.3", "W1.2", "W1.3", "W2.2", "W2.3", NA),
-    FctName = c(rep(c("Log-logistic (4 paras)", "Log-normal", "Weibull I", "Weibull II"), each = 2), NA)
+    FctName1 = c("LL.2", "LL.3", "LN.2", "LN.3", "W1.2", "W1.3", "W2.2", "W2.3", "KDE", "NPMLE", NA),
+    FctName = c(rep(c("Log-logistic (4 paras)", "Log-normal", "Weibull I", "Weibull II"), each = 2), "KDE", "NPMLE", NA)
   )
   temp_Ret <- temp_Ret %>% 
     left_join(df_fct, by = "FctName1") %>% 
-    dplyr::select(Curve_BestFit_data, T50_Mean, T50_SE, FctName)
+    dplyr::select(MeanData, Curve_BestFit_data, FctName, min_res, max_res, T50_res, T50, T50_SE, T50_SD, T50_Lower, T50_Upper)
   
   return(temp_Ret)
 }
 
 ## Function to fit the data to loess model---------------------------------------------
-loess_fit_te <- function(df) {
-  df_temp <- df
+loess_fit_te <- function(df, FctName) {
+  df_temp <- df %>% mutate(After = replace(After, is.infinite(After), NA)) %>% drop_na()
   # Fit all the data to loess model
   tempObj <- try(loess(Response ~ log10(After), data = df_temp, span = 0.5))
   # Generate the dataframe
   if (!is.null(tempObj) & !inherits(tempObj, "try-error")) {
     # time range
-    timeRange <- seq_log(min(df_temp$After), max(df_temp$After), length.out = 500)
+    timeRange <- seq(min(df_temp$After), max(df_temp$After), length.out = 1000)
     temp_Ret <- predict(tempObj, newdata = data.frame(After = as.vector(timeRange)),
                         interval = TRUE, level = 0.95) %>% as.data.frame() %>% 
       mutate(time = timeRange) %>% drop_na()

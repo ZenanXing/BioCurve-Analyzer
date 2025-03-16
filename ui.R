@@ -366,7 +366,7 @@ navbarPage(
                                                           selected = "AIC")
                                     ),
                                     
-                                    # Select the methods
+                                    # Select the methods and the type of ED50s
                                     div(style = "margin-top: 10px;"), 
                                     wellPanel(h5(HTML(paste0("Methods & Type of ED", tags$sub("50"), ":"))) %>% 
                                                 helper(icon = "question-circle", 
@@ -468,52 +468,96 @@ navbarPage(
                                                        type = "markdown",
                                                        content = "Monotonic_TE",
                                                        buttonLabel = "Close"),
-                                              fluidRow(
-                                                div(style = "display: flex; align-items: center; text-align: center;", 
-                                                    column(8, ""),
-                                                    column(4, "Upper")
-                                                )
-                                              ),
-                                              div(style = "margin-top: 10px"), 
-                                              fluidRow(
-                                                div(style = "display:flex;align-items:center;", 
-                                                    column(8, div(style = "display: flex;align-items: center;", checkboxInput("LL4_te", "Log-logistic (4 parms)", TRUE))),
-                                                    column(4, selectInput("LL4_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
-                                                )
-                                              ),
-                                              fluidRow(
-                                                div(style = "display: flex; justify-content: center; align-items: center;", 
-                                                    column(8, div(style = "display:flex;align-items:center;", checkboxInput("LN", "Log-normal", TRUE))),
-                                                    column(4, selectInput("LN_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
-                                                )
-                                              ), 
-                                              fluidRow(
-                                                div(style = "display:flex;align-items:center;", 
-                                                    column(8, div(style = "display:flex;align-items:center;", checkboxInput("W1_te", "Weibull I", TRUE))),
-                                                    column(4, selectInput("W1_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
-                                                )
-                                              ), 
-                                              fluidRow(
-                                                div(style = "display:flex;align-items:center;", 
-                                                    column(8, div(style = "display:flex;align-items:center;", checkboxInput("W2_te", "Weibull II", TRUE))),
-                                                    column(4, selectInput("W2_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
-                                                )
-                                              )
+                                              radioButtons(inputId = "te_models",
+                                                           label = NULL,
+                                                           choices = c("Parametric" = "para",
+                                                                       "Nonparametric" = "nonpara"),
+                                                           selected = "para"), 
+                                              conditionalPanel(condition = "input.te_models == 'para'",
+                                                               # Parametric models
+                                                               wellPanel(
+                                                                 fluidRow(
+                                                                   div(style = "display: flex; align-items: center; text-align: center;", 
+                                                                       column(8, ""),
+                                                                       column(4, "Upper")
+                                                                   )
+                                                                 ),
+                                                                 div(style = "margin-top: 10px"), 
+                                                                 fluidRow(
+                                                                   div(style = "display:flex;align-items:center;", 
+                                                                       column(8, div(style = "display: flex;align-items: center;", checkboxInput("LL4_te", "Log-logistic (4 parms)", TRUE))),
+                                                                       column(4, selectInput("LL4_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                   )
+                                                                 ),
+                                                                 fluidRow(
+                                                                   div(style = "display: flex; justify-content: center; align-items: center;", 
+                                                                       column(8, div(style = "display:flex;align-items:center;", checkboxInput("LN", "Log-normal", TRUE))),
+                                                                       column(4, selectInput("LN_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                   )
+                                                                 ), 
+                                                                 fluidRow(
+                                                                   div(style = "display:flex;align-items:center;", 
+                                                                       column(8, div(style = "display:flex;align-items:center;", checkboxInput("W1_te", "Weibull I", TRUE))),
+                                                                       column(4, selectInput("W1_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                   )
+                                                                 ), 
+                                                                 fluidRow(
+                                                                   div(style = "display:flex;align-items:center;", 
+                                                                       column(8, div(style = "display:flex;align-items:center;", checkboxInput("W2_te", "Weibull II", TRUE))),
+                                                                       column(4, selectInput("W2_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                   )
+                                                                 )
+                                                                )
+                                                               ),
+                                              
+                                              conditionalPanel(condition = "input.te_models == 'nonpara'", 
+                                                               wellPanel(
+                                                                 radioButtons(inputId = "te_nonpara_models",
+                                                                              label = NULL,
+                                                                              choices = c("KDE" = "kde",
+                                                                                          "NPMLE" = "npmle"),
+                                                                              selected = "kde",
+                                                                              inline = TRUE),
+                                                                 conditionalPanel(condition = "input.te_nonpara_models == 'kde'",
+                                                                                  selectInput("kde_m", "Bandwidth Estimation Method", c("AMISE" = "AMISE", "bootstrap" = "boot"), "AMISE")
+                                                                 ),
+                                                                 conditionalPanel(condition = "input.te_nonpara_models == 'npmle'",
+                                                                                  selectInput("npmle_tp", "Type", 
+                                                                                              c("Interpolation" = "interpolation", 
+                                                                                                "Left" = "left", "Right" = "right",
+                                                                                                "Midpoint" = "midpoint"), 
+                                                                                              "interpolation")
+                                                                 )
+                                                                )
+                                                               )
+                                              
                                     ),
-                                    
-                                    # Select the criterion
+                                    conditionalPanel(condition = "input.te_models == 'para'",
+                                                     # Select the criterion
+                                                     div(style = "margin-top: 10px;"), 
+                                                     wellPanel(h5("Criteria for model selection:") %>% 
+                                                                 helper(icon = "question-circle", 
+                                                                        type = "markdown",
+                                                                        content = "Model_Selection_Criteria_TE",
+                                                                        buttonLabel = "Close"),
+                                                               div(style = "margin-top: -10px;"), 
+                                                               selectInput(inputId = "crtrn_selected_te",
+                                                                           label = "",
+                                                                           choices = c("Akaike's Information Criterion" = "AIC", 
+                                                                                       "Bayesian Information Criteria" = "BIC"),
+                                                                           selected = "AIC")
+                                                      )
+                                                     ),
                                     div(style = "margin-top: 10px;"), 
-                                    wellPanel(h5("Criteria for model selection:") %>% 
+                                    wellPanel(h5(HTML(paste0("Type of T", tags$sub("50"), ":"))) %>% 
                                                 helper(icon = "question-circle", 
                                                        type = "markdown",
-                                                       content = "Model_Selection_Criteria_TE",
+                                                       content = "ED_Estimation_Methods",
                                                        buttonLabel = "Close"),
-                                              div(style = "margin-top: -10px;"), 
-                                              selectInput(inputId = "crtrn_selected_te",
-                                                          label = "",
-                                                          choices = c("Akaike's Information Criterion" = "AIC", 
-                                                                      "Bayesian Information Criteria" = "BIC"),
-                                                          selected = "AIC")
+                                              radioButtons(inputId = "t50_type",
+                                                           label = "",
+                                                           choices = c("Absolute", "Relative"),
+                                                           selected = "Absolute")                 
                                     ),
                                     
                                     # Confirm the calculation

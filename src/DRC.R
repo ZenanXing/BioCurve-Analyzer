@@ -84,7 +84,7 @@ observe({
 observeEvent(input$upldData_Butn_drc, {
   if (data_values$n_var < 0) {
     shinyalert(title = "Attention", 
-               text = h5("It seems the data you uploaded doesn't have the nessary columns, please upload the data in the correct format."), 
+               text = h5("It seems the data you uploaded doesn't have the necessary columns, please upload the data in the correct format."), 
                type = "error",
                html = TRUE)
   }
