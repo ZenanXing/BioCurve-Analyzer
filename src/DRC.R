@@ -391,16 +391,19 @@ df_ed_exp <- reactive({
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var, (n_var+11)) } else {selected_var <- c(n_var+11)}
   # ed related
-  selected_var <- c(selected_var, (n_var+18):(n_var+21), (n_var+26), (n_var+29):(n_var+48))
+  selected_var <- c(selected_var, (n_var+18):(n_var+21), (n_var+26), 
+                    (n_var+29):(n_var+37), (n_var+40), (n_var+38):(n_var+39), 
+                    (n_var+41):(n_var+42), (n_var+45), (n_var+43):(n_var+44), 
+                    (n_var+46):(n_var+47), (n_var+50), (n_var+48):(n_var+49), (n_var+51))
   colnm <- c("Model", "Lack-of-fit test", "Neill's test", "No effet test", "Parameters ≠ 0", "Method", 
              "Monotonicity", "Maximum_Response", "Minimum_Response", "Start_Response", "M_Response", "Response_at_Low_ED\u2085\u2080", "Response_at_High_ED\u2085\u2080", 
-             "Low_ED\u2085\u2080_Mean", "Low_ED\u2085\u2080_SE", "Low_ED\u2085\u2080_LowerBound", "Low_ED\u2085\u2080_UpperBound", 
-             "High_ED\u2085\u2080_Mean", "High_ED\u2085\u2080_SE", "High_ED\u2085\u2080_LowerBound", "High_ED\u2085\u2080_UpperBound",
-             "LDS_Mean", "LDS_SE", "LDS_LowerBound", "LDS_UpperBound", "M")
+             "Low_ED\u2085\u2080", "Low_ED\u2085\u2080_SE", "Low_ED\u2085\u2080_SD", "Low_ED\u2085\u2080_LowerBound", "Low_ED\u2085\u2080_UpperBound", 
+             "High_ED\u2085\u2080", "High_ED\u2085\u2080_SE", "High_ED\u2085\u2080_SD", "High_ED\u2085\u2080_LowerBound", "High_ED\u2085\u2080_UpperBound",
+             "LDS", "LDS_SE", "LDS_SD", "LDS_LowerBound", "LDS_UpperBound", "M")
   # RM method
   if (ed50_type == "Absolute") {
-    selected_var <- c(selected_var, (n_var+49):(n_var+54))
-    colnm <- c(colnm, "RM_ED\u2085\u2080_Mean", "RM_ED\u2085\u2080_SD", "RM_ED\u2085\u2080_CV", "RM_ED\u2085\u2080_SE", "RM_ED\u2085\u2080_LowerBound", "RM_ED\u2085\u2080_UpperBound")
+    selected_var <- c(selected_var, (n_var+52), (n_var+55), (n_var+53):(n_var+54), (n_var+56):(n_var+57))
+    colnm <- c(colnm, "RM_ED\u2085\u2080", "RM_ED\u2085\u2080_SE", "RM_ED\u2085\u2080_SD", "RM_ED\u2085\u2080_CV", "RM_ED\u2085\u2080_LowerBound", "RM_ED\u2085\u2080_UpperBound")
   }
   # f values
   if (any(c("Brain-Cousens", "Cedergreen-Ritz-Streibig") %in% df_ed()$Model)) {
@@ -429,7 +432,7 @@ ED50_table_Monotonic <- reactive({
   # low ED50s for monotonic curves
   selected_var <- c(selected_var, (n_var+26), (n_var+34), (n_var+36):(n_var+39))
   df_temp <- df_ed() %>% filter(Model %in% c("Log-logistic (4 paras)", "Log-logistic (5 paras)", "Weibull I", "Weibull II")) %>% dplyr:: select(selected_var)
-  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Method", "Response at ED\u2085\u2080", "ED\u2085\u2080 Mean", "ED\u2085\u2080 SE", "ED\u2085\u2080 Lower Bound", "ED\u2085\u2080 Upper Bound")
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Method", "Response at ED\u2085\u2080", "ED\u2085\u2080", "ED\u2085\u2080 SE", "ED\u2085\u2080 Lower Bound", "ED\u2085\u2080 Upper Bound")
   
   # change the format of digit display
   df_temp <- df_temp %>% mutate(across((n_var+2):ncol(df_temp), ~ map_chr(.x, display_format)))
@@ -451,21 +454,21 @@ ED50_table_Biphasic <- reactive({
   # low ED50s for biphasic curves
   if (input$bi_ed == "low_ed") {
     selected_var <- c(selected_var, (n_var+26), (n_var+34), (n_var+36):(n_var+39))
-    colnms <- c("Method", "Response at Low ED\u2085\u2080", "Low ED\u2085\u2080 Mean", "Low ED\u2085\u2080 SE", "Low ED\u2085\u2080 Lower Bound", "Low ED\u2085\u2080 Upper Bound")
+    colnms <- c("Method", "Response at Low ED\u2085\u2080", "Low ED\u2085\u2080", "Low ED\u2085\u2080 SE", "Low ED\u2085\u2080 Lower Bound", "Low ED\u2085\u2080 Upper Bound")
   }
   # high ED50s for biphasic curves
   if (input$bi_ed == "high_ed") {
-    selected_var <- c(selected_var, (n_var+26), (n_var+35), (n_var+40):(n_var+43))
-    colnms <- c("Method", "Response at High ED\u2085\u2080", "High ED\u2085\u2080 Mean", "High ED\u2085\u2080 SE", "High ED\u2085\u2080 Lower Bound", "High ED\u2085\u2080 Upper Bound")
+    selected_var <- c(selected_var, (n_var+26), (n_var+35), (n_var+41):(n_var+44))
+    colnms <- c("Method", "Response at High ED\u2085\u2080", "High ED\u2085\u2080", "High ED\u2085\u2080 SE", "High ED\u2085\u2080 Lower Bound", "High ED\u2085\u2080 Upper Bound")
   }
   # LDS for biphasic curves
   if (input$bi_ed == "lds") {
-    selected_var <- c(selected_var, (n_var+26), (n_var+32), (n_var+44):(n_var+47))
-    colnms <- c("Method", "Response at LDS", "LDS Mean", "LDS SE", "LDS Lower Bound", "LDS Upper Bound")
+    selected_var <- c(selected_var, (n_var+26), (n_var+32), (n_var+46):(n_var+49))
+    colnms <- c("Method", "Response at LDS", "LDS", "LDS SE", "LDS Lower Bound", "LDS Upper Bound")
   }
   # M for biphasic curves
   if (input$bi_ed == "m") {
-    selected_var <- c(selected_var, (n_var+26), (n_var+33), (n_var+48))
+    selected_var <- c(selected_var, (n_var+26), (n_var+33), (n_var+51))
     colnms <- c("Method", "Response at M", "M (Maximum Stimulation/Inhibition)")
   }
   # f for biphasic curves
@@ -492,11 +495,11 @@ RM_ED50_table <- reactive({
   # variable names
   if (n_var != 0) { selected_var <- c(1:n_var) } else {selected_var <- NULL}
   
-  # ED means of RM method
-  selected_var <- c(selected_var, (n_var+49):(n_var+50), (n_var+53):(n_var+54))
+  # ED estimation by RM method
+  selected_var <- c(selected_var, (n_var+52), (n_var+55):(n_var+57))
 
   df_temp <- df_ed()[ , selected_var]
-  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED\u2085\u2080 Mean", "ED\u2085\u2080 SD", "ED\u2085\u2080 Lower Bound", "ED\u2085\u2080 Upper Bound")
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("ED\u2085\u2080", "ED\u2085\u2080 SE", "ED\u2085\u2080 Lower Bound", "ED\u2085\u2080 Upper Bound")
   df_temp <- df_temp %>% mutate(across((n_var+1):ncol(df_temp), ~ map_chr(.x, display_format)))
 
   return(df_temp)
@@ -888,7 +891,7 @@ L_P <- reactive({
   # Annotation dataframe
   ed_methods <- isolate({input$ed_methods})
   ed50_type <- isolate({input$ed50_type})
-  if (n_var == 0) { selected_var <- c((n_var+30):(n_var+48)) } else { selected_var <- c(1:n_var, (n_var+30):(n_var+48))}
+  if (n_var == 0) { selected_var <- c((n_var+30):(n_var+51)) } else { selected_var <- c(1:n_var, (n_var+30):(n_var+51))}
   anno_df <- isolate({df_ed()})[ , selected_var]
   anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
   
@@ -911,9 +914,9 @@ L_P <- reactive({
         geom_hline(data = anno_df, aes(yintercept = ED50_l_res), linetype = "longdash", alpha = 0.5, color = clr) + 
         geom_hline(data = anno_df, aes(yintercept = ED50_r_res), linetype = "longdash", alpha = 0.5, color = clr) + 
         # ed lines - left
-        geom_vline(data = anno_df, aes(xintercept = ED50_l_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+        geom_vline(data = anno_df, aes(xintercept = ED50_l), linetype = "longdash", alpha = 0.5, color = clr) + 
         # ed lines - right
-        geom_vline(data = anno_df, aes(xintercept = ED50_r_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+        geom_vline(data = anno_df, aes(xintercept = ED50_r), linetype = "longdash", alpha = 0.5, color = clr)
       
       if (input$plot_ci_ck == TRUE) {
         p <- p +
@@ -939,7 +942,7 @@ L_P <- reactive({
         p <- p +
           # LDS
           geom_hline(data = anno_df, aes(yintercept = start_res), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = anno_df, aes(xintercept = LDS_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = anno_df, aes(xintercept = LDS), linetype = "longdash", alpha = 0.5, color = clr) + 
           # M
           geom_hline(data = anno_df, aes(yintercept = m_res), linetype = "longdash", alpha = 0.5, color = clr) + 
           geom_vline(data = anno_df, aes(xintercept = M), linetype = "longdash", alpha = 0.5, color = clr)
@@ -976,9 +979,9 @@ L_P <- reactive({
         geom_hline(data = anno_df, aes(yintercept = ED50_l_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
         geom_hline(data = anno_df, aes(yintercept = ED50_r_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
         # ed lines - left
-        geom_vline(data = anno_df, aes(xintercept = ED50_l_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+        geom_vline(data = anno_df, aes(xintercept = ED50_l, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
         # ed lines - right
-        geom_vline(data = anno_df, aes(xintercept = ED50_r_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+        geom_vline(data = anno_df, aes(xintercept = ED50_r, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
       
       if (input$plot_ci_ck == TRUE) {
         p <- p +
@@ -1003,7 +1006,7 @@ L_P <- reactive({
         p <- p +
           # LDS
           geom_hline(data = anno_df, aes(yintercept = start_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-          geom_vline(data = anno_df, aes(xintercept = LDS_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) +
+          geom_vline(data = anno_df, aes(xintercept = LDS, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) +
           # M
           geom_hline(data = anno_df, aes(yintercept = m_res, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
           geom_vline(data = anno_df, aes(xintercept = M, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)

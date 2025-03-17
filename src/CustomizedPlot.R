@@ -154,7 +154,7 @@ custmz_P <- reactive({
   # Annotation dataframe
   ed_methods <- isolate({input$ed_methods})
   ed50_type <- isolate({input$ed50_type})
-  if (n_var == 0) { selected_var <- c((n_var+30):(n_var+48)) } else { selected_var <- c(1:n_var, (n_var+30):(n_var+48))}
+  if (n_var == 0) { selected_var <- c((n_var+30):(n_var+51)) } else { selected_var <- c(1:n_var, (n_var+30):(n_var+51))}
   anno_df <- isolate({df_ed()})[ , selected_var]
   anno_df[, (n_var+1):ncol(anno_df)] <- lapply(anno_df[, (n_var+1):ncol(anno_df)], as.numeric)
   

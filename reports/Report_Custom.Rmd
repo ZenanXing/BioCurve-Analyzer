@@ -107,8 +107,8 @@ if (any(df_all$Model %in% c("Log-logistic (4 paras)", "Log-logistic (5 paras)", 
 if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {df_bi <- df_all %>% filter(Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))}
 if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
-  bi_low_ed50 <- df_bi[ , c(selected_var, (n_var+12), (n_var+14):(n_var+17))]
-  colnames(bi_low_ed50)[(n_var+1):ncol(bi_low_ed50)] <- c("Response at Low ED\u2085\u2080", "Low ED\u2085\u2080 Mean", "Low ED\u2085\u2080 SE", "Low ED\u2085\u2080 Lower Bound", "Low ED\u2085\u2080 Upper Bound")
+  bi_low_ed50 <- df_bi[ , c(selected_var, (n_var+12), (n_var+14):(n_var+15), (n_var+17):(n_var+18))]
+  colnames(bi_low_ed50)[(n_var+1):ncol(bi_low_ed50)] <- c("Response at Low ED\u2085\u2080", "Low ED\u2085\u2080", "Low ED\u2085\u2080 SE", "Low ED\u2085\u2080 Lower Bound", "Low ED\u2085\u2080 Upper Bound")
   bi_low_ed50 <- bi_low_ed50 %>% mutate(across((n_var+1):ncol(bi_low_ed50), ~ map_chr(.x, display_format)))
   kable(bi_low_ed50, format = "html", caption = "- Biphasic Curves (Low ED~50~)") %>% 
     kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
@@ -117,8 +117,8 @@ if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
 ## ED50 table - Biphasic curves - High ED50s
 if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
-  bi_high_ed50 <- df_bi[ , c(selected_var, (n_var+13), (n_var+18):(n_var+21))]
-  colnames(bi_high_ed50)[(n_var+1):ncol(bi_high_ed50)] <- c("Response at High ED\u2085\u2080", "High ED\u2085\u2080 Mean", "High ED\u2085\u2080 SE", "High ED\u2085\u2080 Lower Bound", "High ED\u2085\u2080 Upper Bound")
+  bi_high_ed50 <- df_bi[ , c(selected_var, (n_var+13), (n_var+19):(n_var+20), (n_var+22):(n_var+23))]
+  colnames(bi_high_ed50)[(n_var+1):ncol(bi_high_ed50)] <- c("Response at High ED\u2085\u2080", "High ED\u2085\u2080", "High ED\u2085\u2080 SE", "High ED\u2085\u2080 Lower Bound", "High ED\u2085\u2080 Upper Bound")
   bi_high_ed50 <- bi_high_ed50 %>% mutate(across((n_var+1):ncol(bi_high_ed50), ~ map_chr(.x, display_format)))
   kable(bi_high_ed50, format = "html", caption = "- Biphasic Curves (High ED~50~)") %>% 
     kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
@@ -127,8 +127,8 @@ if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
 ## ED50 table - Biphasic curves - LDS
 if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
-  bi_lds <- df_bi[ , c(selected_var, (n_var+10), (n_var+22):(n_var+25))]
-  colnames(bi_lds)[(n_var+1):ncol(bi_lds)] <- c("Response at LDS", "LDS Mean", "LDS SE", "LDS Lower Bound", "LDS Upper Bound")
+  bi_lds <- df_bi[ , c(selected_var, (n_var+10), (n_var+24):(n_var+25), (n_var+27):(n_var+28))]
+  colnames(bi_lds)[(n_var+1):ncol(bi_lds)] <- c("Response at LDS", "LDS", "LDS SE", "LDS Lower Bound", "LDS Upper Bound")
   bi_lds <- bi_lds %>% mutate(across((n_var+1):ncol(bi_lds), ~ map_chr(.x, display_format)))
   kable(bi_lds, format = "html", caption = "- Biphasic Curves (LDS)") %>% 
     kable_styling(bootstrap_options = c("striped", "hover", "condensed"), full_width = F, position = "left")
@@ -137,7 +137,7 @@ if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
 ## ED50 table - Biphasic curves - M
 if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
-  bi_m <- df_bi[ , c(selected_var, (n_var+11), (n_var+26))]
+  bi_m <- df_bi[ , c(selected_var, (n_var+11), (n_var+29))]
   colnames(bi_m)[(n_var+1):ncol(bi_m)] <- c("Response at M", "M (Maximum Stimulation/Inhibition)")
   bi_m <- bi_m %>% mutate(across((n_var+1):ncol(bi_m), ~ map_chr(.x, display_format)))
   kable(bi_m, format = "html", caption = "- Biphasic Curves (M)") %>% 
@@ -147,7 +147,12 @@ if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
 ## ED50 table - Biphasic curves - f
 if (any(df_all$Model %in% c("Brain-Cousens", "Cedergreen-Ritz-Streibig"))) {
   if (n_var == 0) {selected_var <- NULL} else {selected_var <- c(1:n_var)}
-  bi_f <- df_bi[ , c(selected_var, (n_var+27):(n_var+30))]
+  if (params$ed50_type == "Absolute") {
+    selected_var <- c(selected_var, (n_var+36):(n_var+39))
+  } else {
+    selected_var <- c(selected_var, (n_var+30):(n_var+33))
+  }
+  bi_f <- df_bi[ , selected_var]
   colnames(bi_f)[(n_var+1):ncol(bi_f)] <- c("f", "p-value (f=0)", "f Lower Bound", "f Upper Bound")
   bi_f <- bi_f %>% mutate(across((n_var+1):ncol(bi_f), ~ map_chr(.x, display_format)))
   kable(bi_f, format = "html", caption = "- Biphasic Curves (f)") %>% 
@@ -249,10 +254,10 @@ palette <- unlist(strsplit(params$palette, ", "))
 
 # Annotation dataframe
 ED_related[, (n_var+8):ncol(ED_related)] <- lapply(ED_related[, (n_var+8):ncol(ED_related)], as.numeric)
-colnames(ED_related)[(n_var+8):(n_var+26)] <- c("Maximum_Response", "Minimum_Response", "Start_Response", "M_Response", "Response_at_Low_ED50", "Response_at_High_ED50",
-                                                "Low_ED50_Mean", "Low_ED50_SE", "Low_ED50_LowerBound", "Low_ED50_UpperBound", 
-                                                "High_ED50_Mean", "High_ED50_SE", "High_ED50_LowerBound", "High_ED50_UpperBound",
-                                                "LDS_Mean", "LDS_SE", "LDS_LowerBound", "LDS_UpperBound", "M")
+colnames(ED_related)[(n_var+8):(n_var+29)] <- c("Maximum_Response", "Minimum_Response", "Start_Response", "M_Response", "Response_at_Low_ED50", "Response_at_High_ED50",
+                                                "Low_ED50", "Low_ED50_SE", "Low_ED50_SD", "Low_ED50_LowerBound", "Low_ED50_UpperBound", 
+                                                "High_ED50", "High_ED50_SE", "High_ED50_SD", "High_ED50_LowerBound", "High_ED50_UpperBound",
+                                                "LDS", "LDS_SE", "LDS_SD", "LDS_LowerBound", "LDS_UpperBound", "M")
 
 if (n_var == 0) {
   # color
@@ -273,9 +278,9 @@ if (n_var == 0) {
       geom_hline(data = ED_related, aes(yintercept = Response_at_Low_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
       geom_hline(data = ED_related, aes(yintercept = Response_at_High_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
       # ed lines - left
-      geom_vline(data = ED_related, aes(xintercept = Low_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+      geom_vline(data = ED_related, aes(xintercept = Low_ED50), linetype = "longdash", alpha = 0.5, color = clr) + 
       # ed lines - right
-      geom_vline(data = ED_related, aes(xintercept = High_ED50_Mean), linetype = "longdash", alpha = 0.5, color = clr)
+      geom_vline(data = ED_related, aes(xintercept = High_ED50), linetype = "longdash", alpha = 0.5, color = clr)
     
     if (plot_ci_ck == TRUE) {
         p <- p + 
@@ -300,7 +305,7 @@ if (n_var == 0) {
         p <- p +
           # LDS
           geom_hline(data = ED_related, aes(yintercept = Start_Response), linetype = "longdash", alpha = 0.5, color = clr) + 
-          geom_vline(data = ED_related, aes(xintercept = LDS_Mean), linetype = "longdash", alpha = 0.5, color = clr) + 
+          geom_vline(data = ED_related, aes(xintercept = LDS), linetype = "longdash", alpha = 0.5, color = clr) + 
           # M
           geom_hline(data = ED_related, aes(yintercept = M_Response), linetype = "longdash", alpha = 0.5, color = clr) + 
           geom_vline(data = ED_related, aes(xintercept = M), linetype = "longdash", alpha = 0.5, color = clr)
@@ -337,9 +342,9 @@ if (n_var == 0) {
       geom_hline(data = ED_related, aes(yintercept = Response_at_Low_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
       geom_hline(data = ED_related, aes(yintercept = Response_at_High_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
       # ed lines - left
-      geom_vline(data = ED_related, aes(xintercept = Low_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
+      geom_vline(data = ED_related, aes(xintercept = Low_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
       # ed lines - right
-      geom_vline(data = ED_related, aes(xintercept = High_ED50_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
+      geom_vline(data = ED_related, aes(xintercept = High_ED50, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)
     
     if (plot_ci_ck == TRUE) {
         p <- p + 
@@ -364,7 +369,7 @@ if (n_var == 0) {
       p <- p +
         # LDS
         geom_hline(data = ED_related, aes(yintercept = Start_Response, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
-        geom_vline(data = ED_related, aes(xintercept = LDS_Mean, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) +
+        geom_vline(data = ED_related, aes(xintercept = LDS, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) +
         # M
         geom_hline(data = ED_related, aes(yintercept = M_Response, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5) + 
         geom_vline(data = ED_related, aes(xintercept = M, group = eval(parse(text = color_var)), color = eval(parse(text = color_var))), linetype = "longdash", alpha = 0.5)

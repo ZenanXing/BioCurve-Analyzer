@@ -199,7 +199,7 @@ compute_ed <- function(opt_mod, dataframe,
     
     if (monotonic_behaviour == "Flat") {
       
-      temp_res <- matrix(NA, 1, 19) %>% as.data.frame()
+      temp_res <- matrix(NA, 1, 22) %>% as.data.frame()
       
     } else {
       temp_res <- tryCatch({
@@ -317,15 +317,15 @@ compute_ed <- function(opt_mod, dataframe,
           max_res = max_res, min_res = min_res, 
           start_res = start_res, m_res = m_res, 
           ED50_l_res = half_resp, ED50_r_res = half_resp_2, 
-          ED50_l_Mean = half_con, ED50_l_SE = NA, ED50_l_L = edl, ED50_l_U = edu, 
-          ED50_r_Mean = half_con2, ED50_r_SE = NA, ED50_r_L = edl2, ED50_r_U = edu2, 
-          LDS_Mean = lds, LDS_SE = NA, LDS_L = ldsl, LDS_U = ldsu, 
+          ED50_l_Mean = half_con, ED50_l_SE = NA, ED50_l_L = edl, ED50_l_U = edu, ED50_l_SD = NA, 
+          ED50_r_Mean = half_con2, ED50_r_SE = NA, ED50_r_L = edl2, ED50_r_U = edu2, ED50_r_SD = NA, 
+          LDS_Mean = lds, LDS_SE = NA, LDS_L = ldsl, LDS_U = ldsu, LDS_SD = NA, 
           M = m
         )
         
       }, error = function(e) {
         print(e)
-        temp_res <- matrix(NA, 1, 19) %>% as.data.frame()
+        temp_res <- matrix(NA, 1, 22) %>% as.data.frame()
       })
       
     }
@@ -348,11 +348,13 @@ compute_ed_SG <- function(df, fct, bp, minidose, ed50_type){
     tempED <- compute_ed(opt_mod = tempObj, dataframe = df, 
                          conf_interval = 0.95, bp = bp, minidose = minidose, ed50_type = ed50_type)
   }else{
-    tempED <- matrix(NA, 1, 22) %>% as.data.frame()
+    tempED <- matrix(NA, 1, 25) %>% as.data.frame()
   }
-  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "max_res", "min_res", "start_res", "m_res", "ED50_l_res", 
-                        "ED50_r_res", "ED50_l_Mean", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U", 
-                        "LDS_Mean", "LDS_SE", "LDS_L", "LDS_U", "M")
+  colnames(tempED) <- c("Curve_BestFit_data", "FctName", "Monotonicity", 
+                        "max_res", "min_res", "start_res", "m_res", "ED50_l_res", "ED50_r_res", 
+                        "ED50_l", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_l_SD", 
+                        "ED50_r", "ED50_r_SE", "ED50_r_L", "ED50_r_U", "ED50_r_SD", 
+                        "LDS", "LDS_SE", "LDS_L", "LDS_U", "LDS_SD", "M")
   return(tempED)
   
 }
@@ -446,7 +448,7 @@ RM_method_f <- function(df, ed50_type) {
     retMat_RM[, 5] <- NA
     retMat_RM[, 6] <- NA
   }
-  colnames(retMat_RM) <- c("RM_ED50_Mean", "RM_ED50_SD", "RM_ED50_CV", "RM_ED50_SE", "RM_ED50L", "RM_ED50U")
+  colnames(retMat_RM) <- c("RM_ED50", "RM_ED50_SD", "RM_ED50_CV", "RM_ED50_SE", "RM_ED50L", "RM_ED50U")
   retMat_RM <- as.data.frame(retMat_RM)
   return(retMat_RM)
   
@@ -460,6 +462,8 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
   # fct <- "BC.5(fixed = c(NA, 0, NA, NA, NA))"
   respns <- df$Response
   dose <- df$Conc
+  n <- n_distinct(df$Replicate)
+  
   tempObj <- try(eval(parse(text = paste0("drm(Response ~ Conc, data = df, fct = ", fct, ")"))), silent = FALSE)
   
   if (!inherits(tempObj, "try-error")){
@@ -482,7 +486,8 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
     
     # Export the nested data for generate plot
     ## calculate the curve interval
-    conf_interval_cv <- stats::predict(tempObj, newdata = data.frame(dose = as.vector(doseRange)), interval = "confidence", level = 0.95) %>% as.data.frame()
+    conf_interval_cv <- stats::predict(tempObj, newdata = data.frame(dose = as.vector(doseRange)), 
+                                       interval = "confidence", level = 0.95) %>% as.data.frame()
     curve_df <- conf_interval_cv %>% dplyr::select(1) %>% mutate(Conc = doseRange)
     colnames(curve_df) <- c("Prediction", "Conc")
     bmd_val <- nest(curve_df, data = everything())
@@ -500,7 +505,7 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
       
       if (monotonic_behaviour == "Flat") {
         
-        temp_res <- matrix(NA, 1, 5) %>% as.data.frame()
+        temp_res <- matrix(NA, 1, 22) %>% as.data.frame()
         
       } else {
         
@@ -521,9 +526,11 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
         # ED50
         ED_fct <- try(ED(tempObj, 50, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
         if(inherits(ED_fct, "try-error")) { 
-          ED_fct <- matrix(NA, 1, 4) %>% as.data.frame()
+          ED_fct <- matrix(NA, 1, 5) %>% as.data.frame()
         } else {
-          ED_fct <- ED_fct %>% as.data.frame()
+          ED_fct <- ED_fct %>% 
+            as.data.frame() %>% 
+            mutate(SD = `Std. Error`*sqrt(n))
         }
         half_resp <- try(predict(tempObj, newdata = data.frame(dose = ED_fct$Estimate)))
         if (!inherits(half_resp, "try-error")) { half_resp <- as.numeric(half_resp) } else { half_resp <- NA }
@@ -532,14 +539,15 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
         if (!(grepl("LL", fctName) || grepl("W", fctName))) {
           if (ed50_type == "Relative") {
             # modify ED_fct
-            colnames(ED_fct) <- c("ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U")
+            colnames(ED_fct) <- c("ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U", "ED50_r_SD")
             ED_fct_f <- data.frame(
               ED50_l_res = NA,
               ED50_r_res = half_resp,
               ED50_l_Mean = NA,
               ED50_l_SE = NA,
               ED50_l_L = NA,
-              ED50_l_U = NA
+              ED50_l_U = NA,
+              ED50_l_SD = NA
             ) %>% cbind(ED_fct)
             
             # M value
@@ -552,21 +560,24 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
             
             # LDS value
             if (grepl("ucedergreen", fctName)) {
-              LDS_fct <- try(ED(tempObj, 99, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
+              LDS_fct <- try(ED(tempObj, 99, interval = "delta", level = 0.95, 
+                                type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
             } else {
-              LDS_fct <- try(ED(tempObj, 1, interval = "delta", level = 0.95, type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
+              LDS_fct <- try(ED(tempObj, 1, interval = "delta", level = 0.95, 
+                                type = tolower(ed50_type), upper = max(dose), lower = min_dose, display = FALSE))
             }
             
             if(inherits(LDS_fct, "try-error")) { 
-              LDS_fct <- matrix(NA, 1, 4) %>% as.data.frame()
+              LDS_fct <- matrix(NA, 1, 5) %>% as.data.frame()
             } else {
-              LDS_fct <- LDS_fct %>% as.data.frame()
+              LDS_fct <- LDS_fct %>% as.data.frame() %>% 
+                mutate(SD = `Std. Error`*sqrt(n))
             }
             
           } else {
-            ED_fct_f <- matrix(NA, 1, 10) %>% as.data.frame()
+            ED_fct_f <- matrix(NA, 1, 12) %>% as.data.frame()
             M_fct <- matrix(NA, 1, 2) %>% as.data.frame()
-            LDS_fct <- matrix(NA, 1, 4) %>% as.data.frame()
+            LDS_fct <- matrix(NA, 1, 5) %>% as.data.frame()
           }
           
         } else {
@@ -581,17 +592,20 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
               ED50_r_Mean = NA,
               ED50_r_SE = NA,
               ED50_r_L = NA,
-              ED50_r_U = NA
+              ED50_r_U = NA,
+              ED50_r_SD = NA
             ))
           M_fct <- matrix(NA, 1, 2) %>% as.data.frame()
-          LDS_fct <- matrix(NA, 1, 4) %>% as.data.frame()
+          LDS_fct <- matrix(NA, 1, 5) %>% as.data.frame()
           
         }
         
         # Change the column names
-        colnames(ED_fct_f) <- c("ED50_l_res", "ED50_r_res", "ED50_l_Mean", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U")
+        colnames(ED_fct_f) <- c("ED50_l_res", "ED50_r_res", 
+                                "ED50_l_Mean", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_l_SD", 
+                                "ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U", "ED50_r_SD")
         colnames(M_fct) <- c("M", "m_res")
-        colnames(LDS_fct) <- c("LDS_Mean", "LDS_SE", "LDS_L", "LDS_U")
+        colnames(LDS_fct) <- c("LDS_Mean", "LDS_SE", "LDS_L", "LDS_U", "LDS_SD")
         
         # Export the info.
         temp_res <- data.frame(
@@ -606,19 +620,21 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
       
     }, error = function(e) {
       print(e)
-      temp_res <- matrix(NA, 1, 19) %>% as.data.frame()
+      temp_res <- matrix(NA, 1, 22) %>% as.data.frame()
     })
     # Export the info.
     bmd_val <- cbind(bmd_val, temp_res)
 
   } else {
     
-    bmd_val <- matrix(NA, 1, 22) %>% as.data.frame()
+    bmd_val <- matrix(NA, 1, 25) %>% as.data.frame()
     
   }
-  colnames(bmd_val) <- c("Curve_BestFit_data", "FctName", "Monotonicity", "max_res", "min_res", "start_res", "m_res", "ED50_l_res", 
-                         "ED50_r_res", "ED50_l_Mean", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_r_Mean", "ED50_r_SE", "ED50_r_L", "ED50_r_U", 
-                         "LDS_Mean", "LDS_SE", "LDS_L", "LDS_U", "M")
+  colnames(bmd_val) <- c("Curve_BestFit_data", "FctName", "Monotonicity", 
+                         "max_res", "min_res", "start_res", "m_res", "ED50_l_res", "ED50_r_res", 
+                         "ED50_l", "ED50_l_SE", "ED50_l_L", "ED50_l_U", "ED50_l_SD", 
+                         "ED50_r", "ED50_r_SE", "ED50_r_L", "ED50_r_U", "ED50_r_SD", 
+                         "LDS", "LDS_SE", "LDS_L", "LDS_U", "LDS_SD", "M")
   return(bmd_val)
 }
 
