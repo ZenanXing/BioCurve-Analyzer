@@ -1,4 +1,4 @@
-Required input information for the time-to-event data stored in the following files:
+Other required input information for the analysis of the time-to-event data.
 
 >> data/Sample_data_spencer_paper.xlsx
 > Time Points: 
