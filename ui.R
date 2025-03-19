@@ -486,25 +486,25 @@ navbarPage(
                                                                  fluidRow(
                                                                    div(style = "display:flex;align-items:center;", 
                                                                        column(8, div(style = "display: flex;align-items: center;", checkboxInput("LL4_te", "Log-logistic (4 parms)", TRUE))),
-                                                                       column(4, selectInput("LL4_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                       column(4, selectInput("LL4_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "1"))
                                                                    )
                                                                  ),
                                                                  fluidRow(
                                                                    div(style = "display: flex; justify-content: center; align-items: center;", 
                                                                        column(8, div(style = "display:flex;align-items:center;", checkboxInput("LN", "Log-normal", TRUE))),
-                                                                       column(4, selectInput("LN_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                       column(4, selectInput("LN_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "1"))
                                                                    )
                                                                  ), 
                                                                  fluidRow(
                                                                    div(style = "display:flex;align-items:center;", 
                                                                        column(8, div(style = "display:flex;align-items:center;", checkboxInput("W1_te", "Weibull I", TRUE))),
-                                                                       column(4, selectInput("W1_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                       column(4, selectInput("W1_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "1"))
                                                                    )
                                                                  ), 
                                                                  fluidRow(
                                                                    div(style = "display:flex;align-items:center;", 
                                                                        column(8, div(style = "display:flex;align-items:center;", checkboxInput("W2_te", "Weibull II", TRUE))),
-                                                                       column(4, selectInput("W2_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "NA"))
+                                                                       column(4, selectInput("W2_te_d", NULL, c("Not Fixed" = "NA", "100%" = "1"), "1"))
                                                                    )
                                                                  )
                                                                 )
