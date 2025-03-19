@@ -1,6 +1,6 @@
 ### Biphasic Curves
 
-The following models are used to describe the biphasic curves.
+The following models are used to describe the biphasic curves. Users may select the candidate models and allow the app to automatically determine the best-fit model for their data. By default, the app selects all the applicable models, enabling it to identify the best-fit model across a wide range of scenarios. However, this may result in over-fitting, so it is advisable for users to select one specific model empirically based on their experimental aims. For detailed discussion about these models, please refer to the references listed at the end.  
 
 #### - Brain-Cousens models
 
@@ -27,4 +27,4 @@ The Cedergreen-Ritz-Streibig model is a modified version of the Brain-Cousens mo
 
 *Brain P, Cousens R (1989) An equation to describe dose responses where there is stimulation of growth at low doses. Weed Res 29: 93--96*\
 *Cedergreen N, Ritz C, Streibig JC (2005) Improved empirical models describing hormesis. Environ Toxicol Chem 24: 3166--3172*\
-*Nweke CO, Nwangwu OR, Ogbonna CJ, Okechi RN (2021) Statistical modeling of effective doses in hormetic dose-response relationships by reparameterization of a bilogistic model for inverted U-shaped curves. AJB 20: 451--464*\
+*Nweke CO, Nwangwu OR, Ogbonna CJ, Okechi RN (2021) Statistical modeling of effective doses in hormetic dose-response relationships by reparameterization of a bilogistic model for inverted U-shaped curves. AJB 20: 451--464*

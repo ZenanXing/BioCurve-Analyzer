@@ -22,4 +22,4 @@ In summary, AIC and BIC are model selection criteria balancing fit and complexit
 
 #### References
 
-*Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One 10: e0146021*\
+*Ritz C, Baty F, Streibig JC, Gerhard D (2015) Dose-Response Analysis Using R. PLoS One 10: e0146021*

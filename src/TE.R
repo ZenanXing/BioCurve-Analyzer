@@ -410,7 +410,7 @@ df_et_exp <- reactive({
   if (n_var != 0) { selected_var <- c(1:n_var) } else { selected_var <- NULL }
   selected_var <- c(selected_var, (n_var+6):(n_var+14))
   df_temp <- df_et()[ , selected_var] 
-  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "Maximum_Response", "Minimum_Response",  "Response_at_T\u2085\u2080", "T\u2085\u2080", "T\u2085\u2080_SE", "T\u2085\u2080_SD", "T\u2085\u2080_LowerBound", "T\u2085\u2080_UpperBound")
+  colnames(df_temp)[(n_var+1):ncol(df_temp)] <- c("Model", "Minimum_Response","Maximum_Response", "Response_at_T\u2085\u2080", "T\u2085\u2080", "T\u2085\u2080_SE", "T\u2085\u2080_SD", "T\u2085\u2080_LowerBound", "T\u2085\u2080_UpperBound")
   return(df_temp)
 })
 

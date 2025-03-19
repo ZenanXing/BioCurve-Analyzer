@@ -579,7 +579,7 @@ output$biphasicmodels <- renderUI({
       ),
       fluidRow(
         div(style = "display: flex; justify-content: center; align-items: center;", 
-            column(6, div(style = "display:flex;align-items:center;", checkboxInput("CRS", "Cedergreen-Ritz-Streibig", FALSE))),
+            column(6, div(style = "display:flex;align-items:center;", checkboxInput("CRS", "Cedergreen-Ritz-Streibig", TRUE))),
             column(3, style = "margin-right: 5px;", 
                    textInput("CRS_c", NULL, "Not Fixed")),
             column(3, style = "margin-right: 5px;")

@@ -25,4 +25,4 @@ You can estimate both the relative and absolute ED~50~s by using the build-in fu
 *Sebaugh JL (2011) Guidelines for accurate EC50/IC50 estimation. Pharm Stat 10: 128–134*\
 *Serra A. Et al. (2020) BMDx: a graphical Shiny application to perform Benchmark Dose analysis for transcriptomics data. Bioinformatics 36: 2932–2933*\
 *Reed LJ, Muench H (1938) A simple method of estimating fifty percent endpoints. Am J Epidemiol 27: 493–497*\
-*Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol 5: 85–86*\
+*Ramakrishnan MA (2016) Determination of 50% endpoint titer using a simple formula. World J Virol 5: 85–86*

@@ -1,6 +1,6 @@
 ### Monotonic Curves
 
-The following models are used to describe the monotonic curves. In the below formulae, y is the response and x is the dose/concentration.
+The following models are used to describe the monotonic curves. Users may select a set of candidate models and allow the app to automatically determine the best-fit model for their data. By default, the app selects all the applicable models, enabling it to identify the best-fit model across a wide range of scenarios. However, this may result in over-fitting, so it is advisable for users to select one specific model empirically based on their experimental aims. In the below formulae, y is the response and x is the dose/concentration. For detailed discussion about these models, please refer to the references listed at the end.  
 
 #### - Log-logistic models
 

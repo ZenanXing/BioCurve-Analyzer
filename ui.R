@@ -552,7 +552,7 @@ navbarPage(
                                     wellPanel(h5(HTML(paste0("Type of T", tags$sub("50"), ":"))) %>% 
                                                 helper(icon = "question-circle", 
                                                        type = "markdown",
-                                                       content = "ED_Estimation_Methods",
+                                                       content = "T50_Type",
                                                        buttonLabel = "Close"),
                                               radioButtons(inputId = "t50_type",
                                                            label = "",
