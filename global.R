@@ -517,10 +517,18 @@ compute_ed_Std <- function(df, bp, fct, ed50_type, minidose, c, d) {
         df_para <- tidy(tempObj, conf.int = TRUE)
         if (!"c" %in% df_para$term) { df_para <- rbind(df_para, c("c", "(Intercept)", as.numeric(c), rep(NA, 5))) }
         if (!"d" %in% df_para$term) { df_para <- rbind(df_para, c("d", "(Intercept)", as.numeric(d), rep(NA, 5))) }
-        if (as.numeric(df_para[df_para$term =="b", 3])>0 && !grepl("ucedergreen", fctName)) {
-          start_res <- df_para[df_para$term =="d", 3] %>% as.numeric()
+        if (!grepl("ucedergreen", fctName) && !grepl("W2", fctName)) {
+          if (as.numeric(df_para[df_para$term =="b", 3])>0) {
+            start_res <- df_para[df_para$term =="d", 3] %>% as.numeric()
+          } else {
+            start_res <- df_para[df_para$term =="c", 3] %>% as.numeric()
+          }
         } else {
-          start_res <- df_para[df_para$term =="c", 3] %>% as.numeric()
+          if (as.numeric(df_para[df_para$term =="b", 3])<0) {
+            start_res <- df_para[df_para$term =="d", 3] %>% as.numeric()
+          } else {
+            start_res <- df_para[df_para$term =="c", 3] %>% as.numeric()
+          }
         }
         
         # ED50
