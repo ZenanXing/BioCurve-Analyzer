@@ -76,7 +76,7 @@ navbarPage(
         br(),
         h5("Source code:"),
         hr(),
-        p("The source code, along with the example data, is available via the GitHub repository (", a(href = "https://github.com/ZenanXing/Biocurve-Analyzer.git", "https://github.com/ZenanXing/Biocurve-Analyzer.git"), ")")
+        p("The source code, along with the example data, is available via the GitHub repository (", a(href = "https://github.com/ZenanXing/BioCurve-Analyzer.git", "https://github.com/ZenanXing/BioCurve-Analyzer.git"), ")")
     )
   ),
   
