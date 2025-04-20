@@ -1,22 +1,22 @@
-# Biocurve Analyzer
+# BioCurve Analyzer
 
 A shiny app that can estimate ED<sub>50</sub> and T<sub>50</sub> from biological curves.  
 
 ## Description  <img src="www/biocurve_analyzer_logo.png" align="right" style="float:right; height:220px; margin: 10px;"/>
 
-**Biocurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED<sub>50</sub> and T<sub>50</sub> from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED<sub>50</sub>s more comprehensively, two types of ED<sub>50</sub>s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
+**BioCurve Analyzer** is a tool used to analyze diverse biological curves generated from dose-response and time-to-event data sets in a stepwise manner. It provides a more user-friendly interface to estimating the ED<sub>50</sub> and T<sub>50</sub> from the curves using the R packages - `drc`, `drcte`, and `aomisc`. All frequently used models are available in this app. It also helps the users to select the best-fit model after you provide all possible candidates. In addition, in order to estimate the ED<sub>50</sub>s more comprehensively, two types of ED<sub>50</sub>s can be estimated by three previously published methods. Finally, a publication-quality figure presenting the biological curves can be generated and further customized by the users. All the dataframes, figures, and a report containing the code for plotting can be downloaded. 
 
 ## Getting Started
 
-Biocurve Analyzer can be used both locally and online. The app can be installed following the instructions below and it is also hosted on Shinyapps.io: https://zenanx.shinyapps.io/biocurve-analyzer/.  
+BioCurve Analyzer can be used both locally and online. The app can be installed following the instructions below and it is also hosted on Shinyapps.io: https://zenanx.shinyapps.io/biocurve-analyzer/.  
 
 ### Installation
 
-To use Biocurve Analyzer locally, you can follow the steps.  
+To use BioCurve Analyzer locally, you can follow the steps.  
 
   1. Install R and RStudio IDE. The app has been tested with R 4.4.1 and RStudio version 2024.04.2+764.  
 
-  2. Clone or download the Biocurve Analyzer from the GitHub. You can either [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) using git or download the app as a ZIP file.  
+  2. Clone or download the BioCurve Analyzer from the GitHub. You can either [clone the repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) using git or download the app as a ZIP file.  
   In addition, these R packages should also be installed by from CRAN or GitHub using the code below.  
 
       ```
@@ -65,7 +65,7 @@ This project is licensed under the GNU General Public License, version 3 (GPLv3)
 
 ## Citations
 
-If you use the Biocurve Analyzer, please cite our paper and the related papers listed below.
+If you use the BioCurve Analyzer, please cite our paper and the related papers listed below.
 
 
 - **Our paper:**  
