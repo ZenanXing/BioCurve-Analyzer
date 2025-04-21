@@ -230,7 +230,7 @@ df_ed <- eventReactive(input$calculate_Butn, {
   ### Log-logistic models (5 parms)
   if (input$LL5) {
     if(is.na(as.numeric(input$LL5_c))) {c <- c("0", "NA")} else {c <- input$LL5_c}
-    if(is.na(as.numeric(input$LL5_d))) {d <- c("1", "NA")} else {d <- input$LL4_d}
+    if(is.na(as.numeric(input$LL5_d))) {d <- c("1", "NA")} else {d <- input$LL5_d}
     c_d <- expand.grid(c = c, d = d)
     fctList_monotnc <- c(fctList_monotnc, paste("LL.5", c_d$c, c_d$d, sep = "_"))
   }
