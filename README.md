@@ -69,7 +69,6 @@ If you use the BioCurve Analyzer, please cite our paper and the related papers l
 
 
 - **Our paper:**  
-
 *Xing Z, Eckhardt J, Vaidya AS, Cutler SR. [BioCurve Analyzer: a web-based shiny app for analyzing biological response curves](https://plantmethods.biomedcentral.com/articles/10.1186/s13007-025-01372-x). Plant Methods 2025; 21: 1–9*
 
 - **Generate the curves:**  
