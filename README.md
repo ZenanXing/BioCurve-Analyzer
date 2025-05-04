@@ -47,7 +47,7 @@ To use BioCurve Analyzer locally, you can follow the steps.
 
 ### Instructions with examples
 
-To use the app properly, please ensure that your data is in a tidy format with the columns in the right order. We have included two datasets from our previously published paper as examples, which you can download for reference. The detailed tutorial for the app is available [here](./Tutorial.pdf). 
+To use the app properly, please ensure that your data is in a tidy format with the columns in the right order. To generate the tidy format, you can use [Tidy-Buddy](https://github.com/ZenanXing/Tidy-Buddy.git), another Shiny app we developed. We have included two datasets from our previously published paper as examples, which you can download for reference. The detailed tutorial for the app is available [here](./Tutorial.pdf). 
 
 ### Help
 
@@ -69,7 +69,8 @@ If you use the BioCurve Analyzer, please cite our paper and the related papers l
 
 
 - **Our paper:**  
-*Xing Z, Eckhardt J, Vaidya A, Cutler S. BioCurve Analyzer: a web-based shiny app for analyzing biological response curves. (manuscript in preparation)*  
+
+*Xing Z, Eckhardt J, Vaidya AS, Cutler SR. [BioCurve Analyzer: a web-based shiny app for analyzing biological response curves](https://plantmethods.biomedcentral.com/articles/10.1186/s13007-025-01372-x). Plant Methods 2025; 21: 1–9*
 
 - **Generate the curves:**  
 *Ritz C, Baty F, Streibig JC, Gerhard D. [Dose-Response Analysis Using R](https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0146021). PLoS One. 2015;10:e0146021.*  
